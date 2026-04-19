@@ -1,18 +1,18 @@
 package domain
+
 // agent_integration.go
 // Agent与Pipeline/ClonePool/AI Runtime集成机制
-package domain
 
 import (
-	"github.com/mengri/nbcoder/backend/domain/pipeline"
-	"github.com/mengri/nbcoder/backend/domain/clonepool"
 	"github.com/mengri/nbcoder/backend/domain/airuntime"
+	"github.com/mengri/nbcoder/backend/domain/clonepool"
+	"github.com/mengri/nbcoder/backend/domain/pipeline"
 )
 
 type AgentIntegration struct {
-	PipelineRef  *pipeline.Stage
-	CloneRef     *clonepool.CloneInstance
-	ModelChain   *airuntime.ModelChain
+	PipelineRef *pipeline.Stage
+	CloneRef    *clonepool.CloneInstance
+	ModelChain  *airuntime.ModelChain
 }
 
 // 任务自动流转与资源调度示例
