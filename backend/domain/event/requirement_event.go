@@ -9,6 +9,7 @@ const (
 	CardConfirmedEvent  RequirementEventType = "CardConfirmed"
 	CardSupersededEvent RequirementEventType = "CardSuperseded"
 	CardAbandonedEvent  RequirementEventType = "CardAbandoned"
+	CardDependenciesChangedEvent RequirementEventType = "CardDependenciesChanged"
 )
 
 type RequirementEvent struct {

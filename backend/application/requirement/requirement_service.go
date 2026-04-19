@@ -121,7 +121,16 @@ func (s *RequirementService) ConfirmCard(cardID string) error {
 		return err
 	}
 	evt := event.NewRequirementEvent(uid.NewID(), cardID, event.CardConfirmedEvent)
-	return s.eventBus.Publish(evt)
+	if err := s.eventBus.Publish(evt); err != nil {
+		return err
+	}
+	if aggregate.ChangeType == requirement.DependencyChangeRemoved {
+		evt2 := event.NewRequirementEvent(uid.NewID(), cardID, event.CardDependenciesChangedEvent)
+		evt2.Payload["change_type"] = string(aggregate.ChangeType)
+		evt2.Payload["dependency_count"] = len(deps) - 1
+		_ = s.eventBus.Publish(evt2)
+	}
+	return nil
 }
 
 func (s *RequirementService) StartCard(cardID string) error {
@@ -175,9 +184,38 @@ func (s *RequirementService) AddDependency(id, cardID, dependsOnID string, depTy
 }
 
 func (s *RequirementService) RemoveDependency(depID string) error {
-	return s.depRepo.Delete(depID)
+	if err := s.depRepo.Delete(depID); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *RequirementService) GetDependencies(cardID string) ([]*requirement.CardDependency, error) {
 	return s.depRepo.FindByCardID(cardID)
+}
+
+func (s *RequirementService) UpdateDependency(id, cardID, dependsOnID string, depType requirement.DependencyType) (*requirement.CardDependency, error) {
+	card, err := s.cardRepo.FindByID(cardID)
+	if err != nil {
+		return nil, err
+	}
+	if card == nil {
+		return nil, fmt.Errorf("card not found: %s", cardID)
+	}
+	oldDeps, _ := s.depRepo.FindByCardID(cardID)
+	aggregate := requirement.NewCardAggregate(card)
+	for _, dep := range oldDeps {
+		aggregate.AddDependency(dep)
+	}
+
+	dep := requirement.NewCardDependency(id, cardID, dependsOnID, depType)
+	if err := s.depRepo.Save(dep); err != nil {
+		return nil, err
+	}
+
+	if err := aggregate.PublishDependencyChangeEvent(s.eventBus); err != nil {
+		return nil, err
+	}
+
+	return dep, nil
 }
