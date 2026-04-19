@@ -36,9 +36,42 @@ func (r *InMemoryCardDependencyRepo) FindByCardID(cardID string) ([]*requirement
 	return result, nil
 }
 
+func (r *InMemoryCardDependencyRepo) FindByDependsOnID(dependsOnID string) ([]*requirement.CardDependency, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*requirement.CardDependency
+	for _, d := range r.deps {
+		if d.DependsOnID == dependsOnID {
+			result = append(result, d)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryCardDependencyRepo) FindByID(id string) (*requirement.CardDependency, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	dep, ok := r.deps[id]
+	if !ok {
+		return nil, nil
+	}
+	return dep, nil
+}
+
 func (r *InMemoryCardDependencyRepo) Delete(id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.deps, id)
+	return nil
+}
+
+func (r *InMemoryCardDependencyRepo) DeleteByCardID(cardID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for id, d := range r.deps {
+		if d.CardID == cardID {
+			delete(r.deps, id)
+		}
+	}
 	return nil
 }
