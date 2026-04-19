@@ -42,3 +42,12 @@ type NotificationHistoryRepo interface {
 	FindByRecipient(recipient string) ([]*NotificationHistory, error)
 	FindByTimeRange(start, end time.Time) ([]*NotificationHistory, error)
 }
+
+type SubscriptionPreferenceRepo interface {
+	Save(pref *SubscriptionPreference) error
+	FindByRecipient(recipient string) ([]*SubscriptionPreference, error)
+	FindByEventType(eventType string) ([]*SubscriptionPreference, error)
+	FindByRecipientAndEventType(recipient, eventType string) (*SubscriptionPreference, error)
+	Update(pref *SubscriptionPreference) error
+	Delete(id string) error
+}

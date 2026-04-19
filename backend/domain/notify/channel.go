@@ -90,3 +90,53 @@ func (s *Subscription) Mute() {
 func (s *Subscription) Unmute() {
 	s.Muted = false
 }
+
+func (s *Subscription) IsMutedForEvent(eventType string) bool {
+	if s.Muted {
+		return true
+	}
+	return false
+}
+
+type SubscriptionPreference struct {
+	ID           string      `json:"id"`
+	Recipient    string      `json:"recipient"`
+	EventType    string      `json:"event_type"`
+	MutedChannels []ChannelType `json:"muted_channels"`
+}
+
+func NewSubscriptionPreference(id, recipient, eventType string) *SubscriptionPreference {
+	return &SubscriptionPreference{
+		ID:            id,
+		Recipient:     recipient,
+		EventType:     eventType,
+		MutedChannels: []ChannelType{},
+	}
+}
+
+func (sp *SubscriptionPreference) MuteChannel(channel ChannelType) {
+	for _, c := range sp.MutedChannels {
+		if c == channel {
+			return
+		}
+	}
+	sp.MutedChannels = append(sp.MutedChannels, channel)
+}
+
+func (sp *SubscriptionPreference) UnmuteChannel(channel ChannelType) {
+	for i, c := range sp.MutedChannels {
+		if c == channel {
+			sp.MutedChannels = append(sp.MutedChannels[:i], sp.MutedChannels[i+1:]...)
+			return
+		}
+	}
+}
+
+func (sp *SubscriptionPreference) IsChannelMuted(channel ChannelType) bool {
+	for _, c := range sp.MutedChannels {
+		if c == channel {
+			return true
+		}
+	}
+	return false
+}
