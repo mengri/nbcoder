@@ -1,4 +1,4 @@
-package domain
+
 // agent.go
 // Agent、Skill 及调度机制领域模型定义
 package domain
