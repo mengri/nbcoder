@@ -1,0 +1,48 @@
+flowchart TD
+  subgraph Requirement[需求领域]
+    Card[CardAggregate]
+    Card -->|事件| Pipeline
+  end
+  subgraph Pipeline[流水线领域]
+    PipelineAgg[PipelineAggregate]
+    PipelineAgg -->|阶段事件| Agent
+  end
+  subgraph Agent[智能体领域]
+    Task[TaskAggregate]
+    Task -->|端口| ClonePool
+    Task -->|端口| AIRuntime
+    Task -->|日志| LogFile
+    Task -->|检索| Knowledge
+  end
+  subgraph Knowledge[知识库领域]
+    Document[Document]
+    Document -->|检索| Agent
+  end
+  subgraph ClonePool[克隆池领域]
+    ClonePoolInst[ClonePool]
+    ClonePoolInst -->|实例| Agent
+  end
+  subgraph AIRuntime[AI运行时领域]
+    Provider[Provider]
+    Provider -->|模型| Agent
+  end
+  subgraph Project[项目领域]
+    ProjectEnt[Project]
+    ProjectEnt -->|配置| Requirement
+  end
+  subgraph Git[Git领域]
+    Repository[Repository]
+    Repository -->|PR/MR| Agent
+    Repository -->|分支| Project
+  end
+  subgraph Notify[通知领域]
+    Notification[Notification]
+    Notification -->|推送| User[用户]
+    Notification <-->|事件| Requirement
+    Notification <-->|事件| Pipeline
+    Notification <-->|事件| Agent
+    Notification <-->|事件| ClonePool
+    Notification <-->|事件| AIRuntime
+    Notification <-->|事件| Project
+    Notification <-->|事件| Git
+  end
