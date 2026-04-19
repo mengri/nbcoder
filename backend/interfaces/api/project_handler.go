@@ -33,6 +33,7 @@ func (h *ProjectHandler) RegisterRoutes(router *gin.RouterGroup) {
 		projects.POST("/:id/activate", h.ActivateProject)
 		projects.GET("/:id/configs", h.GetConfigs)
 		projects.PUT("/:id/configs", h.SetConfig)
+		projects.GET("/:id/configs/history", h.GetConfigHistory)
 		projects.GET("/:id/standards", h.GetStandards)
 		projects.PUT("/:id/standards", h.UpdateStandards)
 	}
@@ -200,6 +201,28 @@ func (h *ProjectHandler) GetStandards(c *gin.Context) {
 		TechStack:         std.TechStack,
 		CodingConventions: std.CodingConventions,
 	})
+}
+
+func (h *ProjectHandler) GetConfigHistory(c *gin.Context) {
+	id := c.Param("id")
+	logs, err := h.projectService.GetConfigHistory(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	result := make([]dto.ConfigChangeLogResponse, 0, len(logs))
+	for _, l := range logs {
+		result = append(result, dto.ConfigChangeLogResponse{
+			ID:        l.ID,
+			ProjectID: l.ProjectID,
+			ConfigKey: l.ConfigKey,
+			OldValue:  l.OldValue,
+			NewValue:  l.NewValue,
+			ChangedAt: l.ChangedAt.Format("2006-01-02T15:04:05Z"),
+			ChangedBy: l.ChangedBy,
+		})
+	}
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *ProjectHandler) UpdateStandards(c *gin.Context) {

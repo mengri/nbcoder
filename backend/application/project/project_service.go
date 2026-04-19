@@ -8,20 +8,23 @@ import (
 )
 
 type ProjectService struct {
-	projectRepo   project.ProjectRepo
-	configRepo    project.ProjectConfigRepo
-	standardsRepo project.StandardsRepo
+	projectRepo       project.ProjectRepo
+	configRepo        project.ProjectConfigRepo
+	standardsRepo     project.StandardsRepo
+	configChangeLogRepo project.ConfigChangeLogRepo
 }
 
 func NewProjectService(
 	projectRepo project.ProjectRepo,
 	configRepo project.ProjectConfigRepo,
 	standardsRepo project.StandardsRepo,
+	configChangeLogRepo project.ConfigChangeLogRepo,
 ) *ProjectService {
 	return &ProjectService{
-		projectRepo:   projectRepo,
-		configRepo:    configRepo,
-		standardsRepo: standardsRepo,
+		projectRepo:       projectRepo,
+		configRepo:        configRepo,
+		standardsRepo:     standardsRepo,
+		configChangeLogRepo: configChangeLogRepo,
 	}
 }
 
@@ -143,17 +146,41 @@ func (s *ProjectService) SetConfig(projectID, key, value string) (*project.Proje
 	configs, _ := s.configRepo.FindByProjectID(projectID)
 	for _, c := range configs {
 		if c.Key == key {
-			c.Value = value
-			c.UpdatedAt = c.UpdatedAt.UTC()
+			oldValue := c.Value
+			c.Update(value)
 			_ = s.configRepo.Update(c)
+			changeLog := project.NewConfigChangeLog(uid.NewID(), projectID, key, oldValue, value, "")
+			_ = s.configChangeLogRepo.Save(changeLog)
 			return c, nil
 		}
 	}
 	cfg := project.NewProjectConfig(uid.NewID(), projectID, key, value)
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 	if err := s.configRepo.Save(cfg); err != nil {
 		return nil, err
 	}
+	changeLog := project.NewConfigChangeLog(uid.NewID(), projectID, key, "", value, "")
+	_ = s.configChangeLogRepo.Save(changeLog)
 	return cfg, nil
+}
+
+func (s *ProjectService) GetConfigHistory(projectID string) ([]*project.ConfigChangeLog, error) {
+	return s.configChangeLogRepo.FindByProjectID(projectID)
+}
+
+func (s *ProjectService) GetConfig(projectID, key string) (*project.ProjectConfig, error) {
+	configs, err := s.configRepo.FindByProjectID(projectID)
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range configs {
+		if c.Key == key {
+			return c, nil
+		}
+	}
+	return nil, fmt.Errorf("config not found: %s", key)
 }
 
 func (s *ProjectService) GetStandards(projectID string) (*project.Standards, error) {

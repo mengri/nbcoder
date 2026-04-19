@@ -38,3 +38,13 @@ type StandardsResponse struct {
 	TechStack         string `json:"tech_stack"`
 	CodingConventions string `json:"coding_conventions"`
 }
+
+type ConfigChangeLogResponse struct {
+	ID        string `json:"id"`
+	ProjectID string `json:"project_id"`
+	ConfigKey string `json:"config_key"`
+	OldValue  string `json:"old_value"`
+	NewValue  string `json:"new_value"`
+	ChangedAt string `json:"changed_at"`
+	ChangedBy string `json:"changed_by"`
+}

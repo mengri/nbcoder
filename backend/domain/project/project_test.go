@@ -100,3 +100,51 @@ func TestDefaultProjectDirectory(t *testing.T) {
 		t.Error("expected .NBCoder directory")
 	}
 }
+
+func TestProjectConfig_Validate(t *testing.T) {
+	cfg := NewProjectConfig("cfg-1", "proj-1", "key1", "value1")
+	if err := cfg.Validate(); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	noKey := NewProjectConfig("cfg-2", "proj-1", "", "value1")
+	if err := noKey.Validate(); err == nil {
+		t.Error("expected error for empty key")
+	}
+}
+
+func TestProjectConfig_Update(t *testing.T) {
+	cfg := NewProjectConfig("cfg-1", "proj-1", "key1", "old")
+	oldUpdatedAt := cfg.UpdatedAt
+	cfg.Update("new")
+	if cfg.Value != "new" {
+		t.Errorf("expected value new, got %s", cfg.Value)
+	}
+	if !cfg.UpdatedAt.After(oldUpdatedAt) {
+		t.Error("expected UpdatedAt to be after old value")
+	}
+}
+
+func TestNewConfigChangeLog(t *testing.T) {
+	log := NewConfigChangeLog("log-1", "proj-1", "key1", "old", "new", "user1")
+	if log.ID != "log-1" {
+		t.Errorf("expected ID log-1, got %s", log.ID)
+	}
+	if log.ProjectID != "proj-1" {
+		t.Errorf("expected ProjectID proj-1, got %s", log.ProjectID)
+	}
+	if log.ConfigKey != "key1" {
+		t.Errorf("expected ConfigKey key1, got %s", log.ConfigKey)
+	}
+	if log.OldValue != "old" {
+		t.Errorf("expected OldValue old, got %s", log.OldValue)
+	}
+	if log.NewValue != "new" {
+		t.Errorf("expected NewValue new, got %s", log.NewValue)
+	}
+	if log.ChangedBy != "user1" {
+		t.Errorf("expected ChangedBy user1, got %s", log.ChangedBy)
+	}
+	if log.ChangedAt.IsZero() {
+		t.Error("expected ChangedAt to be set")
+	}
+}

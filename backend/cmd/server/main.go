@@ -40,7 +40,8 @@ func main() {
 	projectRepo := persistence.NewInMemoryProjectRepo()
 	projectConfigRepo := persistence.NewInMemoryProjectConfigRepo()
 	standardsRepo := persistence.NewInMemoryStandardsRepo()
-	projectService := projectApp.NewProjectService(projectRepo, projectConfigRepo, standardsRepo)
+	configChangeLogRepo := persistence.NewInMemoryConfigChangeLogRepo()
+	projectService := projectApp.NewProjectService(projectRepo, projectConfigRepo, standardsRepo, configChangeLogRepo)
 
 	cloneInstanceRepo := persistence.NewInMemoryCloneInstanceRepo()
 	repositoryRepo := persistence.NewInMemoryRepositoryRepo()

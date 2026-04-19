@@ -20,3 +20,9 @@ type StandardsRepo interface {
 	FindByProjectID(projectID string) (*Standards, error)
 	Update(standards *Standards) error
 }
+
+type ConfigChangeLogRepo interface {
+	Save(log *ConfigChangeLog) error
+	FindByProjectID(projectID string) ([]*ConfigChangeLog, error)
+	FindByConfigKey(projectID, configKey string) ([]*ConfigChangeLog, error)
+}
