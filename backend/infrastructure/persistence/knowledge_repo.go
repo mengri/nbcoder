@@ -143,3 +143,86 @@ func (r *InMemoryDocumentIndexRepo) DeleteByDocumentID(documentID string) error 
 	}
 	return nil
 }
+
+type InMemoryLineageRepo struct {
+	lineages map[string]*knowledge.DocumentLineage
+	mu       sync.RWMutex
+}
+
+func NewInMemoryLineageRepo() *InMemoryLineageRepo {
+	return &InMemoryLineageRepo{
+		lineages: make(map[string]*knowledge.DocumentLineage),
+	}
+}
+
+func (r *InMemoryLineageRepo) Save(lineage *knowledge.DocumentLineage) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.lineages[lineage.ID] = lineage
+	return nil
+}
+
+func (r *InMemoryLineageRepo) FindByDocumentID(documentID string) ([]*knowledge.DocumentLineage, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*knowledge.DocumentLineage
+	for _, l := range r.lineages {
+		if l.DocumentID == documentID {
+			result = append(result, l)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryLineageRepo) FindByParentDocumentID(parentDocumentID string) ([]*knowledge.DocumentLineage, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*knowledge.DocumentLineage
+	for _, l := range r.lineages {
+		if l.ParentDocumentID == parentDocumentID {
+			result = append(result, l)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryLineageRepo) FindAllAncestors(documentID string) ([]*knowledge.DocumentLineage, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	visited := make(map[string]bool)
+	var result []*knowledge.DocumentLineage
+	r.findAncestors(documentID, visited, &result)
+	return result, nil
+}
+
+func (r *InMemoryLineageRepo) findAncestors(documentID string, visited map[string]bool, result *[]*knowledge.DocumentLineage) {
+	for _, l := range r.lineages {
+		if l.DocumentID == documentID && l.ParentDocumentID != "" && !visited[l.ParentDocumentID] {
+			visited[l.ParentDocumentID] = true
+			parentLineages, _ := r.FindByDocumentID(l.ParentDocumentID)
+			for _, pl := range parentLineages {
+				*result = append(*result, pl)
+			}
+			r.findAncestors(l.ParentDocumentID, visited, result)
+		}
+	}
+}
+
+func (r *InMemoryLineageRepo) FindAllDescendants(documentID string) ([]*knowledge.DocumentLineage, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	visited := make(map[string]bool)
+	var result []*knowledge.DocumentLineage
+	r.findDescendants(documentID, visited, &result)
+	return result, nil
+}
+
+func (r *InMemoryLineageRepo) findDescendants(documentID string, visited map[string]bool, result *[]*knowledge.DocumentLineage) {
+	for _, l := range r.lineages {
+		if l.ParentDocumentID == documentID && !visited[l.DocumentID] {
+			visited[l.DocumentID] = true
+			*result = append(*result, l)
+			r.findDescendants(l.DocumentID, visited, result)
+		}
+	}
+}

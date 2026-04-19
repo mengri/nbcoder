@@ -20,3 +20,31 @@ type StandardsRepo interface {
 	FindByProjectID(projectID string) (*Standards, error)
 	Update(standards *Standards) error
 }
+
+type DevStandardRepo interface {
+	Save(standard *DevStandard) error
+	FindByProjectID(projectID string) ([]*DevStandard, error)
+	FindByID(id string) (*DevStandard, error)
+	Update(standard *DevStandard) error
+	Delete(id string) error
+}
+
+type BranchPolicyConfigRepo interface {
+	Save(config *BranchPolicyConfig) error
+	FindByProjectID(projectID string) ([]*BranchPolicyConfig, error)
+	FindByID(id string) (*BranchPolicyConfig, error)
+	Update(config *BranchPolicyConfig) error
+	Delete(id string) error
+}
+
+type ProjectLifecycleRepo interface {
+	Save(lifecycle *ProjectLifecycle) error
+	FindByProjectID(projectID string) (*ProjectLifecycle, error)
+	Update(lifecycle *ProjectLifecycle) error
+}
+
+type ConfigChangeLogRepo interface {
+	Save(log *ConfigChangeLog) error
+	FindByProjectID(projectID string) ([]*ConfigChangeLog, error)
+	FindByConfigKey(projectID, configKey string) ([]*ConfigChangeLog, error)
+}

@@ -5,16 +5,36 @@ import (
 	"time"
 )
 
+type Priority string
+
+const (
+	PriorityLow      Priority = "LOW"
+	PriorityMedium   Priority = "MEDIUM"
+	PriorityHigh     Priority = "HIGH"
+	PriorityCritical Priority = "CRITICAL"
+)
+
+func (p Priority) IsValid() bool {
+	switch p {
+	case PriorityLow, PriorityMedium, PriorityHigh, PriorityCritical:
+		return true
+	}
+	return false
+}
+
 type Card struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Original    string     `json:"original"`
-	Status      CardStatus `json:"status"`
-	ProjectID   string     `json:"project_id"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
-	SupersededBy string   `json:"superseded_by,omitempty"`
+	ID               string     `json:"id"`
+	Title            string     `json:"title"`
+	Description      string     `json:"description"`
+	Original         string     `json:"original"`
+	Status           CardStatus `json:"status"`
+	Priority         Priority   `json:"priority"`
+	StructuredOutput string     `json:"structured_output,omitempty"`
+	PipelineID       string     `json:"pipeline_id,omitempty"`
+	ProjectID        string     `json:"project_id"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+	SupersededBy     string     `json:"superseded_by,omitempty"`
 }
 
 func NewCard(id, title, description, original, projectID string) *Card {
@@ -25,10 +45,30 @@ func NewCard(id, title, description, original, projectID string) *Card {
 		Description: description,
 		Original:    original,
 		Status:      CardDraft,
+		Priority:    PriorityMedium,
 		ProjectID:   projectID,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
+}
+
+func (c *Card) SetPriority(p Priority) error {
+	if !p.IsValid() {
+		return fmt.Errorf("invalid priority: %s", p)
+	}
+	c.Priority = p
+	c.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (c *Card) SetStructuredOutput(output string) {
+	c.StructuredOutput = output
+	c.UpdatedAt = time.Now().UTC()
+}
+
+func (c *Card) SetPipelineID(pipelineID string) {
+	c.PipelineID = pipelineID
+	c.UpdatedAt = time.Now().UTC()
 }
 
 func (c *Card) Confirm() error {
