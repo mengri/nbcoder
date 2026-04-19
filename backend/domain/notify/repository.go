@@ -1,5 +1,7 @@
 package notify
 
+import "time"
+
 type NotificationRepo interface {
 	Save(notification *Notification) error
 	FindByID(id string) (*Notification, error)
@@ -24,4 +26,19 @@ type ChannelRepo interface {
 	FindByID(id string) (*Channel, error)
 	FindByType(channelType ChannelType) ([]*Channel, error)
 	Delete(id string) error
+}
+
+type NotificationTemplateRepo interface {
+	Save(template *NotificationTemplate) error
+	FindByID(id string) (*NotificationTemplate, error)
+	FindByEventType(eventType string) ([]*NotificationTemplate, error)
+	Update(template *NotificationTemplate) error
+	Delete(id string) error
+}
+
+type NotificationHistoryRepo interface {
+	Save(history *NotificationHistory) error
+	FindByNotificationID(notificationID string) ([]*NotificationHistory, error)
+	FindByRecipient(recipient string) ([]*NotificationHistory, error)
+	FindByTimeRange(start, end time.Time) ([]*NotificationHistory, error)
 }

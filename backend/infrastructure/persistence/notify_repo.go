@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"sync"
+	"time"
 
 	"github.com/mengri/nbcoder/domain/notify"
 )
@@ -201,4 +202,112 @@ func (r *InMemoryChannelRepo) Delete(id string) error {
 	defer r.mu.Unlock()
 	delete(r.channels, id)
 	return nil
+}
+
+type InMemoryNotificationTemplateRepo struct {
+	templates map[string]*notify.NotificationTemplate
+	mu        sync.RWMutex
+}
+
+func NewInMemoryNotificationTemplateRepo() *InMemoryNotificationTemplateRepo {
+	return &InMemoryNotificationTemplateRepo{
+		templates: make(map[string]*notify.NotificationTemplate),
+	}
+}
+
+func (r *InMemoryNotificationTemplateRepo) Save(template *notify.NotificationTemplate) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.templates[template.ID] = template
+	return nil
+}
+
+func (r *InMemoryNotificationTemplateRepo) FindByID(id string) (*notify.NotificationTemplate, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	t, ok := r.templates[id]
+	if !ok {
+		return nil, nil
+	}
+	return t, nil
+}
+
+func (r *InMemoryNotificationTemplateRepo) FindByEventType(eventType string) ([]*notify.NotificationTemplate, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.NotificationTemplate
+	for _, t := range r.templates {
+		if t.EventType == eventType {
+			result = append(result, t)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryNotificationTemplateRepo) Update(template *notify.NotificationTemplate) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.templates[template.ID] = template
+	return nil
+}
+
+func (r *InMemoryNotificationTemplateRepo) Delete(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.templates, id)
+	return nil
+}
+
+type InMemoryNotificationHistoryRepo struct {
+	histories map[string]*notify.NotificationHistory
+	mu        sync.RWMutex
+}
+
+func NewInMemoryNotificationHistoryRepo() *InMemoryNotificationHistoryRepo {
+	return &InMemoryNotificationHistoryRepo{
+		histories: make(map[string]*notify.NotificationHistory),
+	}
+}
+
+func (r *InMemoryNotificationHistoryRepo) Save(history *notify.NotificationHistory) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.histories[history.ID] = history
+	return nil
+}
+
+func (r *InMemoryNotificationHistoryRepo) FindByNotificationID(notificationID string) ([]*notify.NotificationHistory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.NotificationHistory
+	for _, h := range r.histories {
+		if h.NotificationID == notificationID {
+			result = append(result, h)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryNotificationHistoryRepo) FindByRecipient(recipient string) ([]*notify.NotificationHistory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.NotificationHistory
+	for _, h := range r.histories {
+		if h.Recipient == recipient {
+			result = append(result, h)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryNotificationHistoryRepo) FindByTimeRange(start, end time.Time) ([]*notify.NotificationHistory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.NotificationHistory
+	for _, h := range r.histories {
+		if !h.SentAt.Before(start) && !h.SentAt.After(end) {
+			result = append(result, h)
+		}
+	}
+	return result, nil
 }
