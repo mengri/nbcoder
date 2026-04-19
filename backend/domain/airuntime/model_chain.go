@@ -11,9 +11,9 @@ const (
 )
 
 type ModelChain struct {
-	ID      string              `json:"id"`
-	Models  []string            `json:"models"`
-	Routes  []ModelRoute        `json:"routes"`
+	ID     string       `json:"id"`
+	Models []string     `json:"models"`
+	Routes []ModelRoute `json:"routes"`
 }
 
 type ModelRoute struct {
