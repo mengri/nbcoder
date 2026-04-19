@@ -42,3 +42,9 @@ type ProjectLifecycleRepo interface {
 	FindByProjectID(projectID string) (*ProjectLifecycle, error)
 	Update(lifecycle *ProjectLifecycle) error
 }
+
+type ConfigChangeLogRepo interface {
+	Save(log *ConfigChangeLog) error
+	FindByProjectID(projectID string) ([]*ConfigChangeLog, error)
+	FindByConfigKey(projectID, configKey string) ([]*ConfigChangeLog, error)
+}

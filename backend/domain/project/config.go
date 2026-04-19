@@ -1,6 +1,9 @@
 package project
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type ProjectConfig struct {
 	ID        string    `json:"id"`
@@ -20,6 +23,40 @@ func NewProjectConfig(id, projectID, key, value string) *ProjectConfig {
 		Value:     value,
 		CreatedAt: now,
 		UpdatedAt: now,
+	}
+}
+
+func (c *ProjectConfig) Validate() error {
+	if c.Key == "" {
+		return fmt.Errorf("config key is required")
+	}
+	return nil
+}
+
+func (c *ProjectConfig) Update(value string) {
+	c.Value = value
+	c.UpdatedAt = time.Now().UTC()
+}
+
+type ConfigChangeLog struct {
+	ID        string    `json:"id"`
+	ProjectID string    `json:"project_id"`
+	ConfigKey string    `json:"config_key"`
+	OldValue  string    `json:"old_value"`
+	NewValue  string    `json:"new_value"`
+	ChangedAt time.Time `json:"changed_at"`
+	ChangedBy string    `json:"changed_by"`
+}
+
+func NewConfigChangeLog(id, projectID, configKey, oldValue, newValue, changedBy string) *ConfigChangeLog {
+	return &ConfigChangeLog{
+		ID:        id,
+		ProjectID: projectID,
+		ConfigKey: configKey,
+		OldValue:  oldValue,
+		NewValue:  newValue,
+		ChangedAt: time.Now().UTC(),
+		ChangedBy: changedBy,
 	}
 }
 
