@@ -19,44 +19,43 @@ import (
 	"github.com/mengri/nbcoder/domain/notify"
 	"github.com/mengri/nbcoder/infrastructure/ai"
 	"github.com/mengri/nbcoder/infrastructure/channel"
+	"github.com/mengri/nbcoder/infrastructure/database"
 	"github.com/mengri/nbcoder/infrastructure/eventbus"
 	"github.com/mengri/nbcoder/infrastructure/git"
-	"github.com/mengri/nbcoder/infrastructure/persistence"
+	"github.com/mengri/nbcoder/infrastructure/persistence/sqlite"
 	"github.com/mengri/nbcoder/interfaces/api"
 )
 
 func main() {
 	eventBus := eventbus.NewInMemoryEventBus()
 
-	taskRepo := persistence.NewInMemoryTaskRepo()
-	executionRepo := persistence.NewInMemoryAgentExecutionRepo()
+	dbConfig := database.DefaultDatabaseConfig()
+	dbManager, err := database.NewDatabaseManager(dbConfig)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer dbManager.Close()
+
+	err = database.InitSchema(dbManager.GetDB())
+	if err != nil {
+		log.Fatalf("Failed to initialize database schema: %v", err)
+	}
+
+	repos := sqlite.NewRepositories(dbManager.GetDB())
 	agentRegistry := agent.NewAgentRegistry()
-	agentService := agentApp.NewAgentService(taskRepo, executionRepo, agentRegistry, eventBus)
+	agentService := agentApp.NewAgentService(repos.Task, repos.AgentExecution, agentRegistry, eventBus)
 
-	cardRepo := persistence.NewInMemoryCardRepo()
-	cardDepRepo := persistence.NewInMemoryCardDependencyRepo()
-	requirementService := requirementApp.NewRequirementService(cardRepo, cardDepRepo, eventBus)
+	requirementService := requirementApp.NewRequirementService(repos.Card, repos.CardDependency, eventBus)
 
-	pipelineRepo := persistence.NewInMemoryPipelineRepo()
-	stageRecordRepo := persistence.NewInMemoryStageRecordRepo()
-	pipelineService := pipelineApp.NewPipelineService(pipelineRepo, stageRecordRepo, eventBus)
+	pipelineService := pipelineApp.NewPipelineService(repos.Pipeline, repos.StageRecord, eventBus)
 
-	projectRepo := persistence.NewInMemoryProjectRepo()
-	projectConfigRepo := persistence.NewInMemoryProjectConfigRepo()
-	standardsRepo := persistence.NewInMemoryStandardsRepo()
-	configChangeLogRepo := persistence.NewInMemoryConfigChangeLogRepo()
-	projectService := projectApp.NewProjectService(projectRepo, projectConfigRepo, standardsRepo, configChangeLogRepo)
+	projectService := projectApp.NewProjectService(repos.Project, repos.ProjectConfig, repos.Standards, repos.ConfigChangeLog)
 
-	cloneInstanceRepo := persistence.NewInMemoryCloneInstanceRepo()
-	repositoryRepo := persistence.NewInMemoryRepositoryRepo()
 	gitClient := git.NewShellGitClient("/tmp/nbcoder/clones")
 	clonePoolService := clonepoolApp.NewClonePoolService(
-		cloneInstanceRepo, repositoryRepo, eventBus, gitClient, "/tmp/nbcoder/clones",
+		repos.CloneInstance, repos.Repository, eventBus, gitClient, "/tmp/nbcoder/clones",
 	)
 
-	providerRepo := persistence.NewInMemoryProviderRepo()
-	chainRepo := persistence.NewInMemoryChainRepo()
-	callLogRepo := persistence.NewInMemoryCallLogRepo()
 	providerRegistry := airuntime.NewProviderRegistry()
 	clientFactory := ai.NewClientFactory()
 
@@ -69,28 +68,19 @@ func main() {
 	}
 
 	aiRuntimeService := airuntimeApp.NewAIRuntimeService(
-		providerRepo, chainRepo, callLogRepo, providerRegistry, eventBus,
+		repos.Provider, repos.ModelChain, repos.CallLog, providerRegistry, eventBus,
 		clientFactory, apiKeyResolver,
 	)
 
-	documentRepo := persistence.NewInMemoryDocumentRepo()
-	directoryRepo := persistence.NewInMemoryDirectoryRepo()
-	chunkRepo := persistence.NewInMemoryChunkRepo()
-	documentIndexRepo := persistence.NewInMemoryDocumentIndexRepo()
-	knowledgeService := knowledgeApp.NewKnowledgeService(documentRepo, directoryRepo, chunkRepo, documentIndexRepo)
+	knowledgeService := knowledgeApp.NewKnowledgeService(repos.Document, repos.Directory, repos.DocumentChunk, repos.DocumentIndex)
 
-	notificationRepo := persistence.NewInMemoryNotificationRepo()
-	subscriptionRepo := persistence.NewInMemorySubscriptionRepo()
-	prefRepo := persistence.NewInMemorySubscriptionPreferenceRepo()
-	channelRepo := persistence.NewInMemoryChannelRepo()
 	dispatcher := notify.NewChannelDispatcher()
 	dispatcher.Register(channel.NewSystemSender())
 	dispatcher.Register(channel.NewWebSocketSender())
 	dispatcher.Register(channel.NewEmailSender())
-	notifyService := notifyApp.NewNotifyService(notificationRepo, subscriptionRepo, prefRepo, channelRepo, dispatcher, eventBus)
+	notifyService := notifyApp.NewNotifyService(repos.Notification, repos.Subscription, repos.SubscriptionPreference, nil, dispatcher, eventBus)
 
-	prRepo := persistence.NewInMemoryPullRequestRepo()
-	gitService := gitApp.NewGitService(prRepo)
+	gitService := gitApp.NewGitService(repos.PullRequest)
 
 	router := gin.Default()
 	apiGroup := router.Group("/api/v1")

@@ -1,0 +1,223 @@
+package sqlite
+
+import (
+	"fmt"
+
+	"github.com/mengri/nbcoder/domain/airuntime"
+	"github.com/mengri/nbcoder/infrastructure/database/models"
+	"gorm.io/gorm"
+)
+
+type ProviderRepo struct {
+	db *gorm.DB
+}
+
+func NewProviderRepo(db *gorm.DB) airuntime.ProviderRepo {
+	return &ProviderRepo{db: db}
+}
+
+func (r *ProviderRepo) Save(provider *airuntime.Provider) error {
+	model := &models.Provider{
+		ID:        provider.ID,
+		Name:      provider.Name,
+		APIKeyRef: provider.APIKeyRef,
+		BaseURL:   provider.BaseURL,
+		IsActive:  provider.IsActive,
+		CreatedAt: provider.CreatedAt,
+		UpdatedAt: provider.UpdatedAt,
+	}
+
+	result := r.db.Save(model)
+	if result.Error != nil {
+		return fmt.Errorf("failed to save provider: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *ProviderRepo) FindByID(id string) (*airuntime.Provider, error) {
+	var model models.Provider
+	result := r.db.Preload("Models").First(&model, "id = ?", id)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find provider by id: %w", result.Error)
+	}
+
+	return r.modelToDomain(&model), nil
+}
+
+func (r *ProviderRepo) FindAll() ([]*airuntime.Provider, error) {
+	var models []models.Provider
+	result := r.db.Preload("Models").Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find all providers: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *ProviderRepo) Update(provider *airuntime.Provider) error {
+	model := &models.Provider{
+		ID:        provider.ID,
+		Name:      provider.Name,
+		APIKeyRef: provider.APIKeyRef,
+		BaseURL:   provider.BaseURL,
+		IsActive:  provider.IsActive,
+		CreatedAt: provider.CreatedAt,
+		UpdatedAt: provider.UpdatedAt,
+	}
+
+	result := r.db.Model(&models.Provider{}).Where("id = ?", provider.ID).Updates(model)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update provider: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *ProviderRepo) FindByName(name string) (*airuntime.Provider, error) {
+	var model models.Provider
+	result := r.db.Preload("Models").Where("name = ?", name).First(&model)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find provider by name: %w", result.Error)
+	}
+
+	return r.modelToDomain(&model), nil
+}
+
+func (r *ProviderRepo) FindActive() ([]*airuntime.Provider, error) {
+	var models []models.Provider
+	result := r.db.Preload("Models").Where("is_active = ?", true).Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find active providers: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *ProviderRepo) modelToDomain(m *models.Provider) *airuntime.Provider {
+	provider := &airuntime.Provider{
+		ID:        m.ID,
+		Name:      m.Name,
+		APIKeyRef: m.APIKeyRef,
+		BaseURL:   m.BaseURL,
+		IsActive:  m.IsActive,
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+		Models:    make([]*airuntime.Model, len(m.Models)),
+	}
+
+	for i, model := range m.Models {
+		provider.Models[i] = &airuntime.Model{
+			ID:        model.ID,
+			Name:      model.Name,
+			ProviderID: model.ProviderID,
+			ModelType: model.ModelType,
+			Meta:      map[string]interface{}(model.Meta),
+			IsActive:  model.IsActive,
+		}
+	}
+
+	return provider
+}
+
+func (r *ProviderRepo) modelsToDomain(models []models.Provider) []*airuntime.Provider {
+	result := make([]*airuntime.Provider, len(models))
+	for i, m := range models {
+		result[i] = r.modelToDomain(&m)
+	}
+	return result
+}
+
+type ModelRepo struct {
+	db *gorm.DB
+}
+
+func NewModelRepo(db *gorm.DB) *ModelRepo {
+	return &ModelRepo{db: db}
+}
+
+func (r *ModelRepo) Save(model *airuntime.Model) error {
+	dbModel := &models.Model{
+		ID:         model.ID,
+		Name:       model.Name,
+		ProviderID: model.ProviderID,
+		ModelType:  model.ModelType,
+		Meta:       models.JSONMap(model.Meta),
+		IsActive:   model.IsActive,
+		CreatedAt:  model.CreatedAt,
+		UpdatedAt:  model.UpdatedAt,
+	}
+
+	result := r.db.Save(dbModel)
+	if result.Error != nil {
+		return fmt.Errorf("failed to save model: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *ModelRepo) FindByID(id string) (*airuntime.Model, error) {
+	var model models.Model
+	result := r.db.First(&model, "id = ?", id)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find model by id: %w", result.Error)
+	}
+
+	return r.modelToDomain(&model), nil
+}
+
+func (r *ModelRepo) FindByProviderID(providerID string) ([]*airuntime.Model, error) {
+	var models []models.Model
+	result := r.db.Where("provider_id = ?", providerID).Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find models by provider id: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *ModelRepo) Update(model *airuntime.Model) error {
+	dbModel := &models.Model{
+		ID:         model.ID,
+		Name:       model.Name,
+		ProviderID: model.ProviderID,
+		ModelType:  model.ModelType,
+		Meta:       models.JSONMap(model.Meta),
+		IsActive:   model.IsActive,
+		CreatedAt:  model.CreatedAt,
+		UpdatedAt:  model.UpdatedAt,
+	}
+
+	result := r.db.Model(&models.Model{}).Where("id = ?", model.ID).Updates(dbModel)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update model: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *ModelRepo) modelToDomain(m *models.Model) *airuntime.Model {
+	return &airuntime.Model{
+		ID:         m.ID,
+		Name:       m.Name,
+		ProviderID: m.ProviderID,
+		ModelType:  m.ModelType,
+		Meta:       map[string]interface{}(m.Meta),
+		IsActive:   m.IsActive,
+		CreatedAt:  m.CreatedAt,
+		UpdatedAt:  m.UpdatedAt,
+	}
+}
+
+func (r *ModelRepo) modelsToDomain(models []models.Model) []*airuntime.Model {
+	result := make([]*airuntime.Model, len(models))
+	for i, m := range models {
+		result[i] = r.modelToDomain(&m)
+	}
+	return result
+}

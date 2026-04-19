@@ -1,0 +1,317 @@
+package sqlite
+
+import (
+	"fmt"
+
+	"github.com/mengri/nbcoder/domain/notify"
+	"github.com/mengri/nbcoder/infrastructure/database/models"
+	"gorm.io/gorm"
+)
+
+type SubscriptionPreferenceRepo struct {
+	db *gorm.DB
+}
+
+func NewSubscriptionPreferenceRepo(db *gorm.DB) notify.SubscriptionPreferenceRepo {
+	return &SubscriptionPreferenceRepo{db: db}
+}
+
+func (r *SubscriptionPreferenceRepo) Save(pref *notify.SubscriptionPreference) error {
+	model := &models.SubscriptionPreference{
+		ID:              pref.ID,
+		Recipient:       pref.Recipient,
+		EventType:       pref.EventType,
+		EnabledChannels: pref.EnabledChannels,
+		MinPriority:     string(pref.MinPriority),
+		DigestEnabled:   pref.DigestEnabled,
+		DigestFrequency: pref.DigestFrequency,
+		CreatedAt:       pref.CreatedAt,
+		UpdatedAt:       pref.UpdatedAt,
+	}
+
+	result := r.db.Save(model)
+	if result.Error != nil {
+		return fmt.Errorf("failed to save subscription preference: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *SubscriptionPreferenceRepo) FindByRecipient(recipient string) ([]*notify.SubscriptionPreference, error) {
+	var models []models.SubscriptionPreference
+	result := r.db.Where("recipient = ?", recipient).Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find subscription preferences by recipient: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *SubscriptionPreferenceRepo) FindByEventType(eventType string) ([]*notify.SubscriptionPreference, error) {
+	var models []models.SubscriptionPreference
+	result := r.db.Where("event_type = ?", eventType).Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find subscription preferences by event type: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *SubscriptionPreferenceRepo) FindByRecipientAndEventType(recipient, eventType string) (*notify.SubscriptionPreference, error) {
+	var model models.SubscriptionPreference
+	result := r.db.Where("recipient = ? AND event_type = ?", recipient, eventType).First(&model)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find subscription preference: %w", result.Error)
+	}
+
+	return r.modelToDomain(&model), nil
+}
+
+func (r *SubscriptionPreferenceRepo) Update(pref *notify.SubscriptionPreference) error {
+	model := &models.SubscriptionPreference{
+		ID:              pref.ID,
+		Recipient:       pref.Recipient,
+		EventType:       pref.EventType,
+		EnabledChannels: pref.EnabledChannels,
+		MinPriority:     string(pref.MinPriority),
+		DigestEnabled:   pref.DigestEnabled,
+		DigestFrequency: pref.DigestFrequency,
+		CreatedAt:       pref.CreatedAt,
+		UpdatedAt:       pref.UpdatedAt,
+	}
+
+	result := r.db.Model(&models.SubscriptionPreference{}).Where("id = ?", pref.ID).Updates(model)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update subscription preference: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *SubscriptionPreferenceRepo) Delete(id string) error {
+	result := r.db.Delete(&models.SubscriptionPreference{}, "id = ?", id)
+	if result.Error != nil {
+		return fmt.Errorf("failed to delete subscription preference: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *SubscriptionPreferenceRepo) modelToDomain(m *models.SubscriptionPreference) *notify.SubscriptionPreference {
+	return &notify.SubscriptionPreference{
+		ID:              m.ID,
+		Recipient:       m.Recipient,
+		EventType:       m.EventType,
+		EnabledChannels: m.EnabledChannels,
+		MinPriority:     notify.NotificationPriority(m.MinPriority),
+		DigestEnabled:   m.DigestEnabled,
+		DigestFrequency: m.DigestFrequency,
+		CreatedAt:       m.CreatedAt,
+		UpdatedAt:       m.UpdatedAt,
+	}
+}
+
+func (r *SubscriptionPreferenceRepo) modelsToDomain(models []models.SubscriptionPreference) []*notify.SubscriptionPreference {
+	result := make([]*notify.SubscriptionPreference, len(models))
+	for i, m := range models {
+		result[i] = r.modelToDomain(&m)
+	}
+	return result
+}
+
+type NotificationTemplateRepo struct {
+	db *gorm.DB
+}
+
+func NewNotificationTemplateRepo(db *gorm.DB) notify.NotificationTemplateRepo {
+	return &NotificationTemplateRepo{db: db}
+}
+
+func (r *NotificationTemplateRepo) Save(template *notify.NotificationTemplate) error {
+	model := &models.NotificationTemplate{
+		ID:         template.ID,
+		Name:       template.Name,
+		EventType:  template.EventType,
+		Subject:    template.Subject,
+		Body:       template.Body,
+		Channel:    string(template.Channel),
+		Variables:  template.Variables,
+		IsActive:   template.IsActive,
+		CreatedAt:  template.CreatedAt,
+		UpdatedAt:  template.UpdatedAt,
+	}
+
+	result := r.db.Save(model)
+	if result.Error != nil {
+		return fmt.Errorf("failed to save notification template: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *NotificationTemplateRepo) FindByID(id string) (*notify.NotificationTemplate, error) {
+	var model models.NotificationTemplate
+	result := r.db.First(&model, "id = ?", id)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find notification template by id: %w", result.Error)
+	}
+
+	return r.modelToDomain(&model), nil
+}
+
+func (r *NotificationTemplateRepo) FindByEventType(eventType string) ([]*notify.NotificationTemplate, error) {
+	var models []models.NotificationTemplate
+	result := r.db.Where("event_type = ? AND is_active = ?", eventType, true).Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find notification templates by event type: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *NotificationTemplateRepo) Update(template *notify.NotificationTemplate) error {
+	model := &models.NotificationTemplate{
+		ID:         template.ID,
+		Name:       template.Name,
+		EventType:  template.EventType,
+		Subject:    template.Subject,
+		Body:       template.Body,
+		Channel:    string(template.Channel),
+		Variables:  template.Variables,
+		IsActive:   template.IsActive,
+		CreatedAt:  template.CreatedAt,
+		UpdatedAt:  template.UpdatedAt,
+	}
+
+	result := r.db.Model(&models.NotificationTemplate{}).Where("id = ?", template.ID).Updates(model)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update notification template: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *NotificationTemplateRepo) Delete(id string) error {
+	result := r.db.Delete(&models.NotificationTemplate{}, "id = ?", id)
+	if result.Error != nil {
+		return fmt.Errorf("failed to delete notification template: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *NotificationTemplateRepo) FindByName(name string) (*notify.NotificationTemplate, error) {
+	var model models.NotificationTemplate
+	result := r.db.Where("name = ?", name).First(&model)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find notification template by name: %w", result.Error)
+	}
+
+	return r.modelToDomain(&model), nil
+}
+
+func (r *NotificationTemplateRepo) modelToDomain(m *models.NotificationTemplate) *notify.NotificationTemplate {
+	return &notify.NotificationTemplate{
+		ID:         m.ID,
+		Name:       m.Name,
+		EventType:  m.EventType,
+		Subject:    m.Subject,
+		Body:       m.Body,
+		Channel:    notify.ChannelType(m.Channel),
+		Variables:  m.Variables,
+		IsActive:   m.IsActive,
+		CreatedAt:  m.CreatedAt,
+		UpdatedAt:  m.UpdatedAt,
+	}
+}
+
+func (r *NotificationTemplateRepo) modelsToDomain(models []models.NotificationTemplate) []*notify.NotificationTemplate {
+	result := make([]*notify.NotificationTemplate, len(models))
+	for i, m := range models {
+		result[i] = r.modelToDomain(&m)
+	}
+	return result
+}
+
+type NotificationHistoryRepo struct {
+	db *gorm.DB
+}
+
+func NewNotificationHistoryRepo(db *gorm.DB) notify.NotificationHistoryRepo {
+	return &NotificationHistoryRepo{db: db}
+}
+
+func (r *NotificationHistoryRepo) Save(history *notify.NotificationHistory) error {
+	model := &models.NotificationHistory{
+		ID:             history.ID,
+		NotificationID: history.NotificationID,
+		Channel:        string(history.Channel),
+		Recipient:      history.Recipient,
+		Status:         history.Status,
+		SentAt:         history.SentAt,
+		Error:          history.Error,
+		CreatedAt:      history.CreatedAt,
+		UpdatedAt:      history.UpdatedAt,
+	}
+
+	result := r.db.Save(model)
+	if result.Error != nil {
+		return fmt.Errorf("failed to save notification history: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *NotificationHistoryRepo) FindByNotificationID(notificationID string) ([]*notify.NotificationHistory, error) {
+	var models []models.NotificationHistory
+	result := r.db.Where("notification_id = ?", notificationID).Order("created_at DESC").Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find notification history by notification id: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *NotificationHistoryRepo) FindByRecipient(recipient string) ([]*notify.NotificationHistory, error) {
+	var models []models.NotificationHistory
+	result := r.db.Where("recipient = ?", recipient).Order("created_at DESC").Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find notification history by recipient: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *NotificationHistoryRepo) FindByTimeRange(start, end int64) ([]*notify.NotificationHistory, error) {
+	var models []models.NotificationHistory
+	result := r.db.Where("created_at BETWEEN ? AND ?", start, end).Order("created_at DESC").Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find notification history by time range: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
+func (r *NotificationHistoryRepo) modelToDomain(m *models.NotificationHistory) *notify.NotificationHistory {
+	return &notify.NotificationHistory{
+		ID:             m.ID,
+		NotificationID: m.NotificationID,
+		Channel:        notify.ChannelType(m.Channel),
+		Recipient:      m.Recipient,
+		Status:         m.Status,
+		SentAt:         m.SentAt,
+		Error:          m.Error,
+		CreatedAt:      m.CreatedAt,
+		UpdatedAt:      m.UpdatedAt,
+	}
+}
+
+func (r *NotificationHistoryRepo) modelsToDomain(models []models.NotificationHistory) []*notify.NotificationHistory {
+	result := make([]*notify.NotificationHistory, len(models))
+	for i, m := range models {
+		result[i] = r.modelToDomain(&m)
+	}
+	return result
+}
