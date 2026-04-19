@@ -24,6 +24,37 @@ func (r *InMemoryProjectConfigRepo) Save(config *project.ProjectConfig) error {
 	return nil
 }
 
+func (r *InMemoryProjectConfigRepo) FindByID(id string) (*project.ProjectConfig, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	config, ok := r.configs[id]
+	if !ok {
+		return nil, nil
+	}
+	return config, nil
+}
+
+func (r *InMemoryProjectConfigRepo) FindAll() ([]*project.ProjectConfig, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	result := make([]*project.ProjectConfig, 0, len(r.configs))
+	for _, c := range r.configs {
+		result = append(result, c)
+	}
+	return result, nil
+}
+
+func (r *InMemoryProjectConfigRepo) FindByKey(projectID, key string) (*project.ProjectConfig, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, c := range r.configs {
+		if c.ProjectID == projectID && c.Key == key {
+			return c, nil
+		}
+	}
+	return nil, nil
+}
+
 func (r *InMemoryProjectConfigRepo) FindByProjectID(projectID string) ([]*project.ProjectConfig, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

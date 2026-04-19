@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -41,4 +42,12 @@ func (s *Skill) GetConfig(key string) (interface{}, bool) {
 	}
 	value, exists := s.Config[key]
 	return value, exists
+}
+
+func (s *Skill) Invoke(args ...interface{}) (interface{}, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("skill %s: no arguments provided", s.Name)
+	}
+	s.UpdatedAt = time.Now().UTC()
+	return fmt.Sprintf("skill %s executed with %d args", s.Name, len(args)), nil
 }

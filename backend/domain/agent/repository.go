@@ -1,14 +1,14 @@
 package agent
 
-type AgentTaskRepo interface {
-	Save(task *AgentTask) error
-	FindByID(id string) (*AgentTask, error)
-	FindByProjectID(projectID string) ([]*AgentTask, error)
-	FindByStatus(status AgentTaskStatus) ([]*AgentTask, error)
-	FindByAgentID(agentID string) ([]*AgentTask, error)
-	FindByPipelineID(pipelineID string) ([]*AgentTask, error)
-	FindAll() ([]*AgentTask, error)
-	Update(task *AgentTask) error
+type TaskRepo interface {
+	Save(task *Task) error
+	FindByID(id string) (*Task, error)
+	FindByProjectID(projectID string) ([]*Task, error)
+	FindByStatus(status TaskStatus) ([]*Task, error)
+	FindByAgentID(agentID string) ([]*Task, error)
+	FindByPipelineID(pipelineID string) ([]*Task, error)
+	FindAll() ([]*Task, error)
+	Update(task *Task) error
 	Delete(id string) error
 }
 

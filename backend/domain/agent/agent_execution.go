@@ -16,6 +16,7 @@ type AgentExecution struct {
 	Error         string                 `json:"error,omitempty"`
 	ModelUsed     string                 `json:"model_used,omitempty"`
 	TokensUsed    int                    `json:"tokens_used,omitempty"`
+	Timestamp     time.Time              `json:"timestamp"`
 }
 
 func NewAgentExecution(id, agentID, taskID string) *AgentExecution {
@@ -28,6 +29,7 @@ func NewAgentExecution(id, agentID, taskID string) *AgentExecution {
 		Status:    "IN_PROGRESS",
 		Input:     make(map[string]interface{}),
 		Output:    make(map[string]interface{}),
+		Timestamp: now,
 	}
 }
 

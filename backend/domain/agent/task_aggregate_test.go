@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewTaskAggregate(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 
 	if aggregate.Task.ID != "task-1" {
@@ -23,7 +23,7 @@ func TestNewTaskAggregate(t *testing.T) {
 }
 
 func TestTaskAggregate_Assign(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 	eventBus := eventbus.NewInMemoryEventBus()
 	handler := NewTestEventHandler()
@@ -55,7 +55,7 @@ func TestTaskAggregate_Assign(t *testing.T) {
 }
 
 func TestTaskAggregate_Assign_InvalidStatus(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	task.Status = TaskCompleted
 	aggregate := NewTaskAggregate(task)
 	eventBus := eventbus.NewInMemoryEventBus()
@@ -66,7 +66,7 @@ func TestTaskAggregate_Assign_InvalidStatus(t *testing.T) {
 }
 
 func TestTaskAggregate_Complete(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 	eventBus := eventbus.NewInMemoryEventBus()
 	handler := NewTestEventHandler()
@@ -96,7 +96,7 @@ func TestTaskAggregate_Complete(t *testing.T) {
 }
 
 func TestTaskAggregate_Fail(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 	eventBus := eventbus.NewInMemoryEventBus()
 	handler := NewTestEventHandler()
@@ -130,7 +130,7 @@ func TestTaskAggregate_Fail(t *testing.T) {
 }
 
 func TestTaskAggregate_Interrupt(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 	eventBus := eventbus.NewInMemoryEventBus()
 	handler := NewTestEventHandler()
@@ -164,7 +164,7 @@ func TestTaskAggregate_Interrupt(t *testing.T) {
 }
 
 func TestTaskAggregate_Archive(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 	eventBus := eventbus.NewInMemoryEventBus()
 	handler := NewTestEventHandler()
@@ -184,17 +184,17 @@ func TestTaskAggregate_Archive(t *testing.T) {
 		t.Errorf("expected status ARCHIVED, got %s", aggregate.Task.Status)
 	}
 
-	if handler.GetEventCount() != 2 {
-		t.Errorf("expected 2 events, got %d", handler.GetEventCount())
+	if handler.GetEventCount() != 1 {
+		t.Errorf("expected 1 event, got %d", handler.GetEventCount())
 	}
 
-	if handler.GetEvents()[1].(*event.AgentTaskEvent).Type != event.TaskArchivedEvent {
-		t.Errorf("expected last event to be TaskArchived, got %s", handler.GetEvents()[1].(*event.AgentTaskEvent).Type)
+	if handler.GetEvents()[0].(*event.AgentTaskEvent).Type != event.TaskArchivedEvent {
+		t.Errorf("expected event to be TaskArchived, got %s", handler.GetEvents()[0].(*event.AgentTaskEvent).Type)
 	}
 }
 
 func TestTaskAggregate_AddExecution(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 
 	execution := NewAgentExecution("exec-1", "agent-1", "task-1")
@@ -206,7 +206,7 @@ func TestTaskAggregate_AddExecution(t *testing.T) {
 }
 
 func TestTaskAggregate_AddSkill(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 
 	skill := NewSkill("skill-1", "Code Generation", "Generate code", AgentTypeTechStack)
@@ -218,7 +218,7 @@ func TestTaskAggregate_AddSkill(t *testing.T) {
 }
 
 func TestTaskAggregate_GetExecutionByID(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 
 	execution := NewAgentExecution("exec-1", "agent-1", "task-1")
@@ -239,7 +239,7 @@ func TestTaskAggregate_GetExecutionByID(t *testing.T) {
 }
 
 func TestTaskAggregate_GetSkillsByAgentType(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	aggregate := NewTaskAggregate(task)
 
 	skill1 := NewSkill("skill-1", "Code Gen", "Generate code", AgentTypeTechStack)

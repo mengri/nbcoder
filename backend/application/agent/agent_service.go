@@ -3,7 +3,6 @@ package agent
 import (
 	"github.com/mengri/nbcoder/domain/agent"
 	"github.com/mengri/nbcoder/domain/event"
-	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type AgentService struct {
@@ -28,7 +27,7 @@ func NewAgentService(
 }
 
 func (s *AgentService) CreateTask(id, name, desc string) (*agent.TaskAggregate, error) {
-	task := agent.NewTask(id, name, desc)
+	task := agent.NewTask(id, name, desc, "CODE_GENERATION", agent.AgentTypeTechStack, "default")
 	aggregate := agent.NewTaskAggregate(task)
 	if err := s.taskRepo.Save(task); err != nil {
 		return nil, err
@@ -42,16 +41,13 @@ func (s *AgentService) AssignTask(taskID, agentID string) error {
 		return err
 	}
 	aggregate := agent.NewTaskAggregate(task)
-	if err := aggregate.Assign(agentID); err != nil {
+	if err := aggregate.Assign(agentID, s.eventBus); err != nil {
 		return err
 	}
 	if err := s.taskRepo.Update(task); err != nil {
 		return err
 	}
-	evt := event.NewAgentTaskEvent(
-		uid.NewID(), taskID, agentID, event.TaskAssignedEvent,
-	)
-	return s.eventBus.Publish(evt)
+	return nil
 }
 
 func (s *AgentService) CompleteTask(taskID string) error {
@@ -60,16 +56,13 @@ func (s *AgentService) CompleteTask(taskID string) error {
 		return err
 	}
 	aggregate := agent.NewTaskAggregate(task)
-	if err := aggregate.Complete(); err != nil {
+	if err := aggregate.Complete(s.eventBus); err != nil {
 		return err
 	}
 	if err := s.taskRepo.Update(task); err != nil {
 		return err
 	}
-	evt := event.NewAgentTaskEvent(
-		uid.NewID(), taskID, task.AssignedTo, event.TaskCompletedEvent,
-	)
-	return s.eventBus.Publish(evt)
+	return nil
 }
 
 func (s *AgentService) FailTask(taskID, reason string) error {
@@ -78,16 +71,13 @@ func (s *AgentService) FailTask(taskID, reason string) error {
 		return err
 	}
 	aggregate := agent.NewTaskAggregate(task)
-	if err := aggregate.Fail(reason); err != nil {
+	if err := aggregate.Fail(reason, s.eventBus); err != nil {
 		return err
 	}
 	if err := s.taskRepo.Update(task); err != nil {
 		return err
 	}
-	evt := event.NewAgentTaskEvent(
-		uid.NewID(), taskID, task.AssignedTo, event.TaskFailedEvent,
-	)
-	return s.eventBus.Publish(evt)
+	return nil
 }
 
 func (s *AgentService) GetTask(taskID string) (*agent.Task, error) {

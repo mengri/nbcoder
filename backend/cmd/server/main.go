@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,11 @@ import (
 	requirementApp "github.com/mengri/nbcoder/application/requirement"
 	"github.com/mengri/nbcoder/domain/agent"
 	"github.com/mengri/nbcoder/domain/airuntime"
+	"github.com/mengri/nbcoder/domain/notify"
+	"github.com/mengri/nbcoder/infrastructure/ai"
 	"github.com/mengri/nbcoder/infrastructure/channel"
 	"github.com/mengri/nbcoder/infrastructure/eventbus"
+	"github.com/mengri/nbcoder/infrastructure/git"
 	"github.com/mengri/nbcoder/infrastructure/persistence"
 	"github.com/mengri/nbcoder/interfaces/api"
 )
@@ -45,13 +49,29 @@ func main() {
 
 	cloneInstanceRepo := persistence.NewInMemoryCloneInstanceRepo()
 	repositoryRepo := persistence.NewInMemoryRepositoryRepo()
-	clonePoolService := clonepoolApp.NewClonePoolService(cloneInstanceRepo, repositoryRepo, eventBus)
+	gitClient := git.NewShellGitClient("/tmp/nbcoder/clones")
+	clonePoolService := clonepoolApp.NewClonePoolService(
+		cloneInstanceRepo, repositoryRepo, eventBus, gitClient, "/tmp/nbcoder/clones",
+	)
 
 	providerRepo := persistence.NewInMemoryProviderRepo()
 	chainRepo := persistence.NewInMemoryChainRepo()
 	callLogRepo := persistence.NewInMemoryCallLogRepo()
 	providerRegistry := airuntime.NewProviderRegistry()
-	aiRuntimeService := airuntimeApp.NewAIRuntimeService(providerRepo, chainRepo, callLogRepo, providerRegistry, eventBus)
+	clientFactory := ai.NewClientFactory()
+
+	apiKeyResolver := func(providerID string) (string, error) {
+		provider, ok := providerRegistry.Get(providerID)
+		if !ok {
+			return "", fmt.Errorf("provider not found: %s", providerID)
+		}
+		return provider.APIKeyRef, nil
+	}
+
+	aiRuntimeService := airuntimeApp.NewAIRuntimeService(
+		providerRepo, chainRepo, callLogRepo, providerRegistry, eventBus,
+		clientFactory, apiKeyResolver,
+	)
 
 	documentRepo := persistence.NewInMemoryDocumentRepo()
 	directoryRepo := persistence.NewInMemoryDirectoryRepo()
@@ -62,7 +82,7 @@ func main() {
 	notificationRepo := persistence.NewInMemoryNotificationRepo()
 	subscriptionRepo := persistence.NewInMemorySubscriptionRepo()
 	prefRepo := persistence.NewInMemorySubscriptionPreferenceRepo()
-	channelRepo := channel.NewInMemoryChannelRepo()
+	channelRepo := persistence.NewInMemoryChannelRepo()
 	dispatcher := notify.NewChannelDispatcher()
 	dispatcher.Register(channel.NewSystemSender())
 	dispatcher.Register(channel.NewWebSocketSender())

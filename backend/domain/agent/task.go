@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-type AgentTask struct {
+type Task struct {
 	ID          string          `json:"id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description,omitempty"`
 	AgentType   AgentType       `json:"agent_type"`
 	TaskType    string          `json:"task_type"`
-	Status      AgentTaskStatus `json:"status"`
+	Status      TaskStatus `json:"status"`
 	Priority    int             `json:"priority"`
 	AssignedTo  string          `json:"assigned_to,omitempty"`
 	PipelineID  string          `json:"pipeline_id,omitempty"`
@@ -23,9 +23,9 @@ type AgentTask struct {
 	Context     map[string]interface{} `json:"context,omitempty"`
 }
 
-func NewAgentTask(id, name, description, taskType string, agentType AgentType, projectID string) *AgentTask {
+func NewTask(id, name, description, taskType string, agentType AgentType, projectID string) *Task {
 	now := time.Now().UTC()
-	return &AgentTask{
+	return &Task{
 		ID:          id,
 		Name:        name,
 		Description: description,
@@ -40,7 +40,7 @@ func NewAgentTask(id, name, description, taskType string, agentType AgentType, p
 	}
 }
 
-func (t *AgentTask) Assign(agentID string) error {
+func (t *Task) Assign(agentID string) error {
 	if !t.Status.CanTransitionTo(TaskInProgress) {
 		return fmt.Errorf("cannot assign task in status %s", t.Status)
 	}
@@ -53,7 +53,7 @@ func (t *AgentTask) Assign(agentID string) error {
 	return nil
 }
 
-func (t *AgentTask) Complete() error {
+func (t *Task) Complete() error {
 	if !t.Status.CanTransitionTo(TaskCompleted) {
 		return fmt.Errorf("cannot complete task in status %s", t.Status)
 	}
@@ -65,7 +65,7 @@ func (t *AgentTask) Complete() error {
 	return nil
 }
 
-func (t *AgentTask) Fail(reason string) error {
+func (t *Task) Fail(reason string) error {
 	if !t.Status.CanTransitionTo(TaskFailed) {
 		return fmt.Errorf("cannot fail task in status %s", t.Status)
 	}
@@ -77,7 +77,7 @@ func (t *AgentTask) Fail(reason string) error {
 	return nil
 }
 
-func (t *AgentTask) Interrupt(reason string) error {
+func (t *Task) Interrupt(reason string) error {
 	if !t.Status.CanTransitionTo(TaskInterrupted) {
 		return fmt.Errorf("cannot interrupt task in status %s", t.Status)
 	}
@@ -89,7 +89,7 @@ func (t *AgentTask) Interrupt(reason string) error {
 	return nil
 }
 
-func (t *AgentTask) Archive() error {
+func (t *Task) Archive() error {
 	if !t.Status.CanTransitionTo(TaskArchived) {
 		return fmt.Errorf("cannot archive task in status %s", t.Status)
 	}
@@ -100,7 +100,7 @@ func (t *AgentTask) Archive() error {
 	return nil
 }
 
-func (t *AgentTask) UpdateContext(key string, value interface{}) {
+func (t *Task) UpdateContext(key string, value interface{}) {
 	if t.Context == nil {
 		t.Context = make(map[string]interface{})
 	}
@@ -108,17 +108,17 @@ func (t *AgentTask) UpdateContext(key string, value interface{}) {
 	t.UpdatedAt = time.Now().UTC()
 }
 
-func (t *AgentTask) SetPriority(priority int) {
+func (t *Task) SetPriority(priority int) {
 	t.Priority = priority
 	t.UpdatedAt = time.Now().UTC()
 }
 
-func (t *AgentTask) SetPipelineID(pipelineID string) {
+func (t *Task) SetPipelineID(pipelineID string) {
 	t.PipelineID = pipelineID
 	t.UpdatedAt = time.Now().UTC()
 }
 
-func (t *AgentTask) GetDuration() time.Duration {
+func (t *Task) GetDuration() time.Duration {
 	if t.StartedAt == nil {
 		return 0
 	}

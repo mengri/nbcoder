@@ -52,3 +52,56 @@ func (r *InMemoryTaskRepo) Update(task *agent.Task) error {
 	r.tasks[task.ID] = task
 	return nil
 }
+
+func (r *InMemoryTaskRepo) FindByProjectID(projectID string) ([]*agent.Task, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*agent.Task
+	for _, t := range r.tasks {
+		if t.ProjectID == projectID {
+			result = append(result, t)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryTaskRepo) FindByAgentID(agentID string) ([]*agent.Task, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*agent.Task
+	for _, t := range r.tasks {
+		if t.AssignedTo == agentID {
+			result = append(result, t)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryTaskRepo) FindByPipelineID(pipelineID string) ([]*agent.Task, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*agent.Task
+	for _, t := range r.tasks {
+		if t.PipelineID == pipelineID {
+			result = append(result, t)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryTaskRepo) FindAll() ([]*agent.Task, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	result := make([]*agent.Task, 0, len(r.tasks))
+	for _, t := range r.tasks {
+		result = append(result, t)
+	}
+	return result, nil
+}
+
+func (r *InMemoryTaskRepo) Delete(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.tasks, id)
+	return nil
+}

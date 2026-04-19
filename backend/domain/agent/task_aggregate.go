@@ -8,12 +8,12 @@ import (
 )
 
 type TaskAggregate struct {
-	Task       *AgentTask
+	Task       *Task
 	Executions []*AgentExecution
 	Skills     []*Skill
 }
 
-func NewTaskAggregate(task *AgentTask) *TaskAggregate {
+func NewTaskAggregate(task *Task) *TaskAggregate {
 	return &TaskAggregate{
 		Task:       task,
 		Executions: []*AgentExecution{},

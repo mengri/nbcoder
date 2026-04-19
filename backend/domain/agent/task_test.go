@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-func TestAgentTaskStatus_IsValid(t *testing.T) {
-	validStatuses := []AgentTaskStatus{TaskPending, TaskInProgress, TaskCompleted, TaskFailed, TaskInterrupted, TaskArchived}
+func TestTaskStatus_IsValid(t *testing.T) {
+	validStatuses := []TaskStatus{TaskPending, TaskInProgress, TaskCompleted, TaskFailed, TaskInterrupted, TaskArchived}
 
 	for _, status := range validStatuses {
 		if !status.IsValid() {
@@ -14,16 +14,16 @@ func TestAgentTaskStatus_IsValid(t *testing.T) {
 		}
 	}
 
-	invalidStatus := AgentTaskStatus("INVALID")
+	invalidStatus := TaskStatus("INVALID")
 	if invalidStatus.IsValid() {
 		t.Error("expected INVALID status to be invalid")
 	}
 }
 
-func TestAgentTaskStatus_CanTransitionTo(t *testing.T) {
+func TestTaskStatus_CanTransitionTo(t *testing.T) {
 	tests := []struct {
-		currentStatus   AgentTaskStatus
-		targetStatus   AgentTaskStatus
+		currentStatus   TaskStatus
+		targetStatus   TaskStatus
 		expectedResult bool
 	}{
 		{TaskPending, TaskInProgress, true},
@@ -63,8 +63,8 @@ func TestAgentType_IsValid(t *testing.T) {
 	}
 }
 
-func TestNewAgentTask(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+func TestNewTask(t *testing.T) {
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 
 	if task.ID != "task-1" {
 		t.Errorf("expected ID task-1, got %s", task.ID)
@@ -90,7 +90,7 @@ func TestNewAgentTask(t *testing.T) {
 }
 
 func TestAgentTask_Assign(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 
 	err := task.Assign("agent-1")
 	if err != nil {
@@ -109,7 +109,7 @@ func TestAgentTask_Assign(t *testing.T) {
 }
 
 func TestAgentTask_Assign_InvalidStatus(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	task.Status = TaskCompleted
 
 	err := task.Assign("agent-1")
@@ -119,7 +119,7 @@ func TestAgentTask_Assign_InvalidStatus(t *testing.T) {
 }
 
 func TestAgentTask_Complete(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	task.Assign("agent-1")
 
 	err := task.Complete()
@@ -136,7 +136,7 @@ func TestAgentTask_Complete(t *testing.T) {
 }
 
 func TestAgentTask_Complete_InvalidStatus(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 
 	err := task.Complete()
 	if err == nil {
@@ -145,7 +145,7 @@ func TestAgentTask_Complete_InvalidStatus(t *testing.T) {
 }
 
 func TestAgentTask_Fail(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	task.Assign("agent-1")
 
 	err := task.Fail("timeout error")
@@ -162,7 +162,7 @@ func TestAgentTask_Fail(t *testing.T) {
 }
 
 func TestAgentTask_Interrupt(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	task.Assign("agent-1")
 
 	err := task.Interrupt("user cancelled")
@@ -179,7 +179,7 @@ func TestAgentTask_Interrupt(t *testing.T) {
 }
 
 func TestAgentTask_Archive(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 	task.Assign("agent-1")
 	task.Complete()
 
@@ -194,16 +194,17 @@ func TestAgentTask_Archive(t *testing.T) {
 }
 
 func TestAgentTask_Archive_InvalidStatus(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task.Status = TaskArchived
 
 	err := task.Archive()
 	if err == nil {
-		t.Error("expected error archiving pending task")
+		t.Error("expected error archiving archived task")
 	}
 }
 
 func TestAgentTask_UpdateContext(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 
 	task.UpdateContext("key1", "value1")
 	task.UpdateContext("key2", 123)
@@ -217,7 +218,7 @@ func TestAgentTask_UpdateContext(t *testing.T) {
 }
 
 func TestAgentTask_SetPriority(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 
 	task.SetPriority(10)
 
@@ -227,7 +228,7 @@ func TestAgentTask_SetPriority(t *testing.T) {
 }
 
 func TestAgentTask_SetPipelineID(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 
 	task.SetPipelineID("pipeline-1")
 
@@ -237,7 +238,7 @@ func TestAgentTask_SetPipelineID(t *testing.T) {
 }
 
 func TestAgentTask_GetDuration(t *testing.T) {
-	task := NewAgentTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
+	task := NewTask("task-1", "Test Task", "Description", "development", AgentTypeTechStack, "proj-1")
 
 	duration := task.GetDuration()
 	if duration != 0 {

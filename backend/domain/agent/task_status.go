@@ -1,17 +1,17 @@
 package agent
 
-type AgentTaskStatus string
+type TaskStatus string
 
 const (
-	TaskPending    AgentTaskStatus = "PENDING"
-	TaskInProgress AgentTaskStatus = "IN_PROGRESS"
-	TaskCompleted  AgentTaskStatus = "COMPLETED"
-	TaskFailed     AgentTaskStatus = "FAILED"
-	TaskInterrupted AgentTaskStatus = "INTERRUPTED"
-	TaskArchived   AgentTaskStatus = "ARCHIVED"
+	TaskPending    TaskStatus = "PENDING"
+	TaskInProgress TaskStatus = "IN_PROGRESS"
+	TaskCompleted  TaskStatus = "COMPLETED"
+	TaskFailed     TaskStatus = "FAILED"
+	TaskInterrupted TaskStatus = "INTERRUPTED"
+	TaskArchived   TaskStatus = "ARCHIVED"
 )
 
-func (s AgentTaskStatus) IsValid() bool {
+func (s TaskStatus) IsValid() bool {
 	switch s {
 	case TaskPending, TaskInProgress, TaskCompleted, TaskFailed, TaskInterrupted, TaskArchived:
 		return true
@@ -19,7 +19,7 @@ func (s AgentTaskStatus) IsValid() bool {
 	return false
 }
 
-func (s AgentTaskStatus) CanTransitionTo(newStatus AgentTaskStatus) bool {
+func (s TaskStatus) CanTransitionTo(newStatus TaskStatus) bool {
 	switch s {
 	case TaskPending:
 		return newStatus == TaskInProgress || newStatus == TaskArchived
