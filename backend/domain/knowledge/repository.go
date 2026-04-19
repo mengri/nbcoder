@@ -39,3 +39,11 @@ type DocumentIndexRepo interface {
 	Search(query *SearchQuery) ([]*SearchResult, error)
 	DeleteByDocumentID(documentID string) error
 }
+
+type LineageRepo interface {
+	Save(lineage *DocumentLineage) error
+	FindByDocumentID(documentID string) ([]*DocumentLineage, error)
+	FindByParentDocumentID(parentDocumentID string) ([]*DocumentLineage, error)
+	FindAllAncestors(documentID string) ([]*DocumentLineage, error)
+	FindAllDescendants(documentID string) ([]*DocumentLineage, error)
+}
