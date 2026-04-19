@@ -46,10 +46,10 @@ func (ca *CardAggregate) RemoveDependency(depID string) error {
 }
 
 func (ca *CardAggregate) IsBlocked() bool {
-	return ca.IsDependencySatisfied()
+	return ca.HasBlockingDependencies()
 }
 
-func (ca *CardAggregate) IsDependencySatisfied() bool {
+func (ca *CardAggregate) HasBlockingDependencies() bool {
 	for _, dep := range ca.Dependencies {
 		if dep.Type == DependencyDependsOn {
 			return true
@@ -69,7 +69,7 @@ func (ca *CardAggregate) GetBlockingDependencies() []*CardDependency {
 }
 
 func (ca *CardAggregate) CheckAutoUnblock() bool {
-	return !ca.IsDependencySatisfied()
+	return !ca.HasBlockingDependencies()
 }
 
 func (ca *CardAggregate) Confirm() error {
@@ -84,8 +84,43 @@ func (ca *CardAggregate) GetDependencies() []*CardDependency {
 }
 
 func (ca *CardAggregate) PublishDependencyChangeEvent(eventBus event.EventBus) error {
-	evt := event.NewRequirementEvent(uid.NewID(), ca.Card.ID, CardDependenciesChangedEvent)
+	evt := event.NewRequirementEvent(uid.NewID(), ca.Card.ID, event.CardDependenciesChangedEvent)
 	evt.Payload["change_type"] = string(ca.ChangeType)
 	evt.Payload["dependency_count"] = len(ca.Dependencies)
 	return eventBus.Publish(evt)
+}
+
+func (ca *CardAggregate) Supersede(newCardID string) error {
+	if err := ca.Card.Supersede(newCardID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ca *CardAggregate) Abandon() error {
+	if err := ca.Card.Abandon(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ca *CardAggregate) ClearDependencies() {
+	ca.Dependencies = []*CardDependency{}
+	ca.ChangeType = DependencyChangeRemoved
+}
+
+func (ca *CardAggregate) HasDependencies() bool {
+	return len(ca.Dependencies) > 0
+}
+
+func (ca *CardAggregate) GetSupersededBy() string {
+	return ca.Card.SupersededBy
+}
+
+func (ca *CardAggregate) IsSuperseded() bool {
+	return ca.Card.Status == CardSuperseded
+}
+
+func (ca *CardAggregate) IsAbandoned() bool {
+	return ca.Card.Status == CardAbandoned
 }
