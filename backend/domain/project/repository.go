@@ -8,9 +8,21 @@ type ProjectRepo interface {
 	Delete(id string) error
 }
 
+type GlobalConfigRepo interface {
+	Save(config *GlobalConfig) error
+	FindByID(id string) (*GlobalConfig, error)
+	FindByKey(key string) (*GlobalConfig, error)
+	FindAll() ([]*GlobalConfig, error)
+	Update(config *GlobalConfig) error
+	Delete(id string) error
+}
+
 type ProjectConfigRepo interface {
 	Save(config *ProjectConfig) error
+	FindByID(id string) (*ProjectConfig, error)
 	FindByProjectID(projectID string) ([]*ProjectConfig, error)
+	FindByKey(projectID, key string) (*ProjectConfig, error)
+	FindAll() ([]*ProjectConfig, error)
 	Update(config *ProjectConfig) error
 	Delete(id string) error
 }

@@ -5,6 +5,60 @@ import (
 	"time"
 )
 
+type GlobalConfig struct {
+	ID        string    `json:"id"`
+	Key       string    `json:"key"`
+	Value     string    `json:"value"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func NewGlobalConfig(id, key, value string) *GlobalConfig {
+	now := time.Now().UTC()
+	return &GlobalConfig{
+		ID:        id,
+		Key:       key,
+		Value:     value,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+}
+
+func (c *GlobalConfig) Validate() error {
+	if c.Key == "" {
+		return fmt.Errorf("global config key is required")
+	}
+	return nil
+}
+
+func (c *GlobalConfig) Update(value string) {
+	c.Value = value
+	c.UpdatedAt = time.Now().UTC()
+}
+
+type ConfigScope string
+
+const (
+	ConfigScopeGlobal   ConfigScope = "GLOBAL"
+	ConfigScopeProject ConfigScope = "PROJECT"
+)
+
+type ConfigItem struct {
+	Scope     ConfigScope `json:"scope"`
+	ProjectID string     `json:"project_id,omitempty"`
+	Key       string     `json:"key"`
+	Value     string     `json:"value"`
+}
+
+func NewConfigItem(scope ConfigScope, projectID, key, value string) *ConfigItem {
+	return &ConfigItem{
+		Scope:     scope,
+		ProjectID: projectID,
+		Key:       key,
+		Value:     value,
+	}
+}
+
 type ProjectConfig struct {
 	ID        string    `json:"id"`
 	ProjectID string    `json:"project_id"`
