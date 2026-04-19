@@ -9,12 +9,20 @@ import (
 )
 
 type GitHandler struct {
-	gitService *gitApp.GitService
+	gitService    *gitApp.GitService
+	reviewService *gitApp.ReviewService
 }
 
 func NewGitHandler(gitService *gitApp.GitService) *GitHandler {
 	return &GitHandler{
 		gitService: gitService,
+	}
+}
+
+func NewGitHandlerWithReview(gitService *gitApp.GitService, reviewService *gitApp.ReviewService) *GitHandler {
+	return &GitHandler{
+		gitService:    gitService,
+		reviewService: reviewService,
 	}
 }
 
@@ -26,6 +34,11 @@ func (h *GitHandler) RegisterRoutes(router *gin.RouterGroup) {
 		gitRoutes.GET("/pull-requests/:id", h.GetPullRequest)
 		gitRoutes.POST("/pull-requests/:id/merge", h.MergePullRequest)
 		gitRoutes.POST("/pull-requests/:id/close", h.ClosePullRequest)
+		gitRoutes.POST("/pull-requests/:id/squash-merge", h.SquashMergePullRequest)
+		gitRoutes.POST("/pull-requests/:id/reviews", h.CreateReview)
+		gitRoutes.PUT("/pull-requests/:id/reviews/:reviewId/approve", h.ApproveReview)
+		gitRoutes.PUT("/pull-requests/:id/reviews/:reviewId/reject", h.RejectReview)
+		gitRoutes.GET("/pull-requests/:id/reviews", h.GetReviews)
 		gitRoutes.POST("/branches/validate", h.ValidateBranch)
 	}
 }
@@ -111,6 +124,89 @@ func (h *GitHandler) ClosePullRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "pull request closed"})
 }
 
+func (h *GitHandler) SquashMergePullRequest(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		CommitMessage string `json:"commit_message" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.gitService.SquashMergePullRequest(id, req.CommitMessage); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "pull request squash merged"})
+}
+
+func (h *GitHandler) CreateReview(c *gin.Context) {
+	prID := c.Param("id")
+	var req struct {
+		Reviewer string `json:"reviewer" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	review, err := h.reviewService.CreateReview(prID, req.Reviewer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, toReviewResponse(review))
+}
+
+func (h *GitHandler) ApproveReview(c *gin.Context) {
+	prID := c.Param("id")
+	reviewID := c.Param("reviewId")
+	var req struct {
+		Comment string `json:"comment"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	review, err := h.reviewService.ApproveReview(prID, reviewID, req.Comment)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, toReviewResponse(review))
+}
+
+func (h *GitHandler) RejectReview(c *gin.Context) {
+	prID := c.Param("id")
+	reviewID := c.Param("reviewId")
+	var req struct {
+		Comment string `json:"comment"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	review, err := h.reviewService.RejectReview(prID, reviewID, req.Comment)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, toReviewResponse(review))
+}
+
+func (h *GitHandler) GetReviews(c *gin.Context) {
+	prID := c.Param("id")
+	reviews, err := h.reviewService.GetReviews(prID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	resp := make([]gin.H, len(reviews))
+	for i, r := range reviews {
+		resp[i] = toReviewResponse(r)
+	}
+	c.JSON(http.StatusOK, gin.H{"reviews": resp})
+}
+
 func (h *GitHandler) ValidateBranch(c *gin.Context) {
 	var req struct {
 		Pattern string `json:"pattern"`
@@ -127,19 +223,37 @@ func (h *GitHandler) ValidateBranch(c *gin.Context) {
 
 func toPullRequestResponse(pr *git.PullRequest) gin.H {
 	resp := gin.H{
-		"id":             pr.ID,
-		"title":          pr.Title,
-		"description":    pr.Description,
-		"source_branch":  pr.SourceBranch,
-		"target_branch":  pr.TargetBranch,
-		"status":         string(pr.Status),
-		"project_id":     pr.ProjectID,
-		"author":         pr.Author,
-		"created_at":     pr.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		"updated_at":     pr.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		"id":               pr.ID,
+		"title":            pr.Title,
+		"description":      pr.Description,
+		"source_branch":    pr.SourceBranch,
+		"target_branch":    pr.TargetBranch,
+		"status":           string(pr.Status),
+		"project_id":       pr.ProjectID,
+		"author":           pr.Author,
+		"created_at":       pr.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		"updated_at":       pr.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if pr.GeneratedDesc != "" {
 		resp["generated_desc"] = pr.GeneratedDesc
+	}
+	if pr.SquashCommitMsg != "" {
+		resp["squash_commit_msg"] = pr.SquashCommitMsg
+	}
+	return resp
+}
+
+func toReviewResponse(r *git.Review) gin.H {
+	resp := gin.H{
+		"id":              r.ID,
+		"pull_request_id": r.PullRequestID,
+		"reviewer":        r.Reviewer,
+		"status":          string(r.Status),
+		"comment":         r.Comment,
+		"created_at":      r.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+	if r.ReviewedAt != nil {
+		resp["reviewed_at"] = r.ReviewedAt.Format("2006-01-02T15:04:05Z")
 	}
 	return resp
 }

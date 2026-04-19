@@ -14,17 +14,18 @@ const (
 )
 
 type PullRequest struct {
-	ID            string            `json:"id"`
-	Title         string            `json:"title"`
-	Description   string            `json:"description,omitempty"`
-	SourceBranch  string            `json:"source_branch"`
-	TargetBranch  string            `json:"target_branch"`
-	Status        PullRequestStatus `json:"status"`
-	ProjectID     string            `json:"project_id,omitempty"`
-	Author        string            `json:"author,omitempty"`
-	GeneratedDesc string            `json:"generated_desc,omitempty"`
-	CreatedAt     time.Time         `json:"created_at"`
-	UpdatedAt     time.Time         `json:"updated_at"`
+	ID             string            `json:"id"`
+	Title          string            `json:"title"`
+	Description    string            `json:"description,omitempty"`
+	SourceBranch   string            `json:"source_branch"`
+	TargetBranch   string            `json:"target_branch"`
+	Status         PullRequestStatus `json:"status"`
+	ProjectID      string            `json:"project_id,omitempty"`
+	Author         string            `json:"author,omitempty"`
+	GeneratedDesc  string            `json:"generated_desc,omitempty"`
+	SquashCommitMsg string           `json:"squash_commit_msg,omitempty"`
+	CreatedAt      time.Time         `json:"created_at"`
+	UpdatedAt      time.Time         `json:"updated_at"`
 }
 
 func NewPullRequest(id, title, source, target string) *PullRequest {
@@ -54,6 +55,22 @@ func (pr *PullRequest) Merge() error {
 		return fmt.Errorf("cannot merge PR in status %s", pr.Status)
 	}
 	pr.Status = PRMerged
+	pr.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (pr *PullRequest) SquashMerge(commitMsg string, reviews []*Review) error {
+	if pr.Status != PROpen {
+		return fmt.Errorf("cannot squash merge PR in status %s", pr.Status)
+	}
+	if commitMsg == "" {
+		return fmt.Errorf("commit message is required for squash merge")
+	}
+	if err := AllReviewsApproved(reviews); err != nil {
+		return fmt.Errorf("squash merge blocked: %w", err)
+	}
+	pr.Status = PRMerged
+	pr.SquashCommitMsg = commitMsg
 	pr.UpdatedAt = time.Now().UTC()
 	return nil
 }

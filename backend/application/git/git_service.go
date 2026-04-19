@@ -9,6 +9,7 @@ import (
 
 type GitService struct {
 	prRepo    git.PullRequestRepo
+	reviewRepo git.ReviewRepo
 	descGen   git.DescriptionGenerator
 }
 
@@ -23,6 +24,14 @@ func NewGitServiceWithGenerator(prRepo git.PullRequestRepo, descGen git.Descript
 	return &GitService{
 		prRepo:  prRepo,
 		descGen: descGen,
+	}
+}
+
+func NewGitServiceWithRepos(prRepo git.PullRequestRepo, reviewRepo git.ReviewRepo) *GitService {
+	return &GitService{
+		prRepo:     prRepo,
+		reviewRepo: reviewRepo,
+		descGen:    &git.DefaultDescriptionGenerator{},
 	}
 }
 
@@ -84,4 +93,22 @@ func (s *GitService) ClosePullRequest(id string) error {
 
 func (s *GitService) ValidateBranch(policy *git.BranchPolicy, branch string) bool {
 	return policy.Validate(branch)
+}
+
+func (s *GitService) SquashMergePullRequest(id, commitMsg string) error {
+	pr, err := s.prRepo.FindByID(id)
+	if err != nil {
+		return err
+	}
+	if pr == nil {
+		return fmt.Errorf("pull request not found: %s", id)
+	}
+	reviews, err := s.reviewRepo.FindByPullRequestID(id)
+	if err != nil {
+		return err
+	}
+	if err := pr.SquashMerge(commitMsg, reviews); err != nil {
+		return err
+	}
+	return s.prRepo.Update(pr)
 }
