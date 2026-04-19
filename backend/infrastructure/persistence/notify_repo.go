@@ -58,6 +58,25 @@ func (r *InMemoryNotificationRepo) FindByEventType(eventType string) ([]*notify.
 	return result, nil
 }
 
+func (r *InMemoryNotificationRepo) FindByRecipientAndChannel(recipient string, channel notify.ChannelType) ([]*notify.Notification, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.Notification
+	for _, n := range r.notifications {
+		if n.Recipient == recipient && n.Channel == channel {
+			result = append(result, n)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryNotificationRepo) Update(notification *notify.Notification) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.notifications[notification.ID] = notification
+	return nil
+}
+
 func (r *InMemoryNotificationRepo) MarkRead(id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -111,6 +130,18 @@ func (r *InMemorySubscriptionRepo) FindByEventType(eventType string) ([]*notify.
 	return result, nil
 }
 
+func (r *InMemorySubscriptionRepo) FindByRecipientAndEventType(recipient, eventType string) ([]*notify.Subscription, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.Subscription
+	for _, s := range r.subs {
+		if s.Recipient == recipient && s.EventType == eventType {
+			result = append(result, s)
+		}
+	}
+	return result, nil
+}
+
 func (r *InMemorySubscriptionRepo) Update(sub *notify.Subscription) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -122,5 +153,52 @@ func (r *InMemorySubscriptionRepo) Delete(id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.subs, id)
+	return nil
+}
+
+type InMemoryChannelRepo struct {
+	channels map[string]*notify.Channel
+	mu       sync.RWMutex
+}
+
+func NewInMemoryChannelRepo() *InMemoryChannelRepo {
+	return &InMemoryChannelRepo{
+		channels: make(map[string]*notify.Channel),
+	}
+}
+
+func (r *InMemoryChannelRepo) Save(channel *notify.Channel) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.channels[channel.ID] = channel
+	return nil
+}
+
+func (r *InMemoryChannelRepo) FindByID(id string) (*notify.Channel, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	ch, ok := r.channels[id]
+	if !ok {
+		return nil, nil
+	}
+	return ch, nil
+}
+
+func (r *InMemoryChannelRepo) FindByType(channelType notify.ChannelType) ([]*notify.Channel, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.Channel
+	for _, ch := range r.channels {
+		if ch.Type == channelType {
+			result = append(result, ch)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryChannelRepo) Delete(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.channels, id)
 	return nil
 }
