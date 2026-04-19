@@ -36,3 +36,9 @@ type BranchPolicyConfigRepo interface {
 	Update(config *BranchPolicyConfig) error
 	Delete(id string) error
 }
+
+type ProjectLifecycleRepo interface {
+	Save(lifecycle *ProjectLifecycle) error
+	FindByProjectID(projectID string) (*ProjectLifecycle, error)
+	Update(lifecycle *ProjectLifecycle) error
+}

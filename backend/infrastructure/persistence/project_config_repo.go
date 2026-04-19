@@ -193,3 +193,39 @@ func (r *InMemoryBranchPolicyConfigRepo) Delete(id string) error {
 	delete(r.configs, id)
 	return nil
 }
+
+type InMemoryProjectLifecycleRepo struct {
+	lifecycles map[string]*project.ProjectLifecycle
+	mu         sync.RWMutex
+}
+
+func NewInMemoryProjectLifecycleRepo() *InMemoryProjectLifecycleRepo {
+	return &InMemoryProjectLifecycleRepo{
+		lifecycles: make(map[string]*project.ProjectLifecycle),
+	}
+}
+
+func (r *InMemoryProjectLifecycleRepo) Save(lifecycle *project.ProjectLifecycle) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.lifecycles[lifecycle.ID] = lifecycle
+	return nil
+}
+
+func (r *InMemoryProjectLifecycleRepo) FindByProjectID(projectID string) (*project.ProjectLifecycle, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, l := range r.lifecycles {
+		if l.ProjectID == projectID {
+			return l, nil
+		}
+	}
+	return nil, nil
+}
+
+func (r *InMemoryProjectLifecycleRepo) Update(lifecycle *project.ProjectLifecycle) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.lifecycles[lifecycle.ID] = lifecycle
+	return nil
+}
