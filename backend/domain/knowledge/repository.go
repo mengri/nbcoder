@@ -23,7 +23,17 @@ type DocumentRepo interface {
 	Save(doc *Document) error
 	FindByID(id string) (*Document, error)
 	FindByProjectID(projectID string) ([]*Document, error)
+	FindByDirectoryID(directoryID string) ([]*Document, error)
 	Update(doc *Document) error
+	Delete(id string) error
+}
+
+type DirectoryRepo interface {
+	Save(dir *Directory) error
+	FindByID(id string) (*Directory, error)
+	FindByProjectID(projectID string) ([]*Directory, error)
+	FindByParentID(parentID string) ([]*Directory, error)
+	Update(dir *Directory) error
 	Delete(id string) error
 }
 
