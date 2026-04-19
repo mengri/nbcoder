@@ -1,6 +1,4 @@
 package airuntime
-// token_usage.go
-// Token计费与调用日志
 
 import "time"
 
@@ -19,10 +17,10 @@ type CallLog struct {
 	AgentID   string    `json:"agent_id"`
 	Input     string    `json:"input"`
 	Output    string    `json:"output"`
+	Tokens    int       `json:"tokens"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
-// 计费方式可扩展
 func CalculateCost(tokens int, rate float64) float64 {
 	return float64(tokens) * rate
 }

@@ -1,51 +1,69 @@
 package pipeline
-// stage.go
-// Pipeline 阶段状态机与执行控制
 
-import "time"
-
-type StageStatus string
-
-const (
-	StageNotStarted   StageStatus = "NOT_STARTED"
-	StageInProgress   StageStatus = "IN_PROGRESS"
-	StageCompleted    StageStatus = "COMPLETED"
-	StageFailed       StageStatus = "FAILED"
-	StageReviewNeeded StageStatus = "REVIEW_NEEDED"
+import (
+	"fmt"
+	"time"
 )
 
 type Stage struct {
 	ID        string      `json:"id"`
 	Name      string      `json:"name"`
 	Status    StageStatus `json:"status"`
+	Config    StageConfig `json:"config"`
 	StartedAt time.Time   `json:"started_at,omitempty"`
 	EndedAt   time.Time   `json:"ended_at,omitempty"`
-	Logs      []string    `json:"logs"`
 }
 
-func (s *Stage) Start() {
+func NewStage(id, name string, config StageConfig) *Stage {
+	return &Stage{
+		ID:     id,
+		Name:   name,
+		Status: StageNotStarted,
+		Config: config,
+	}
+}
+
+func (s *Stage) Start() error {
+	if s.Status != StageNotStarted {
+		return fmt.Errorf("cannot start stage in status %s", s.Status)
+	}
 	s.Status = StageInProgress
 	s.StartedAt = time.Now().UTC()
-	s.Logs = append(s.Logs, "Stage started at "+s.StartedAt.String())
-	// TODO: 发布 StageStarted 领域事件
+	return nil
 }
 
-func (s *Stage) Complete() {
+func (s *Stage) Complete() error {
+	if s.Status != StageInProgress {
+		return fmt.Errorf("cannot complete stage in status %s", s.Status)
+	}
 	s.Status = StageCompleted
 	s.EndedAt = time.Now().UTC()
-	s.Logs = append(s.Logs, "Stage completed at "+s.EndedAt.String())
-	// TODO: 发布 StageCompleted 领域事件
+	return nil
 }
 
-func (s *Stage) Fail(reason string) {
+func (s *Stage) Fail(reason string) error {
+	if s.Status != StageInProgress {
+		return fmt.Errorf("cannot fail stage in status %s", s.Status)
+	}
 	s.Status = StageFailed
 	s.EndedAt = time.Now().UTC()
-	s.Logs = append(s.Logs, "Stage failed at "+s.EndedAt.String()+": "+reason)
-	// TODO: 发布 StageFailed 领域事件
+	return nil
 }
 
-func (s *Stage) RequireReview() {
+func (s *Stage) RequireReview() error {
+	if s.Status != StageInProgress {
+		return fmt.Errorf("cannot require review for stage in status %s", s.Status)
+	}
 	s.Status = StageReviewNeeded
-	s.Logs = append(s.Logs, "Stage requires review at "+time.Now().UTC().String())
-	// TODO: 发布 StageReviewRequired 领域事件
+	return nil
+}
+
+func (s *Stage) Retry() error {
+	if s.Status != StageFailed {
+		return fmt.Errorf("cannot retry stage in status %s", s.Status)
+	}
+	s.Status = StageNotStarted
+	s.StartedAt = time.Time{}
+	s.EndedAt = time.Time{}
+	return nil
 }

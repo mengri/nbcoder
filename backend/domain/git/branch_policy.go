@@ -1,18 +1,25 @@
 package git
-// branch_policy.go
-// 分支策略与命名规范配置与校验
 
-
-import (
-	"regexp"
-)
+import "regexp"
 
 type BranchPolicy struct {
 	ProjectID      string
-	AllowedPattern string // e.g. ^(main|dev|feature/\w+|fix/\w+|release/\w+)$
+	AllowedPattern string
 }
 
 func (p *BranchPolicy) Validate(branch string) bool {
 	re := regexp.MustCompile(p.AllowedPattern)
 	return re.MatchString(branch)
+}
+
+type Branch struct {
+	Name      string `json:"name"`
+	IsDefault bool   `json:"is_default"`
+}
+
+func NewBranch(name string, isDefault bool) *Branch {
+	return &Branch{
+		Name:      name,
+		IsDefault: isDefault,
+	}
 }

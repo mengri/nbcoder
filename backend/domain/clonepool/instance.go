@@ -1,63 +1,62 @@
 package clonepool
-// instance.go
-// 克隆实例状态流转与校验
 
-import "time"
-
-type CloneInstanceStatus string
-
-const (
-	InstanceIdle      CloneInstanceStatus = "IDLE"
-	InstanceAllocating CloneInstanceStatus = "ALLOCATING"
-	InstanceInUse     CloneInstanceStatus = "IN_USE"
-	InstanceRecycling CloneInstanceStatus = "RECYCLING"
-	InstanceReleased  CloneInstanceStatus = "RELEASED"
+import (
+	"fmt"
+	"time"
 )
 
 type CloneInstance struct {
-	ID        string              `json:"id"`
-	Status    CloneInstanceStatus `json:"status"`
-	UpdatedAt time.Time           `json:"updated_at"`
-	Logs      []string            `json:"logs"`
+	ID           string              `json:"id"`
+	RepositoryID string              `json:"repository_id"`
+	Status       CloneInstanceStatus `json:"status"`
+	AssignedTask string              `json:"assigned_task,omitempty"`
+	UpdatedAt    time.Time           `json:"updated_at"`
 }
 
-func (ci *CloneInstance) Allocate() {
-	ci.Status = InstanceAllocating
-	ci.UpdatedAt = time.Now().UTC()
-	ci.Logs = append(ci.Logs, "Instance allocating at "+ci.UpdatedAt.String())
+func NewCloneInstance(id, repositoryID string) *CloneInstance {
+	return &CloneInstance{
+		ID:           id,
+		RepositoryID: repositoryID,
+		Status:       InstanceIdle,
+		UpdatedAt:    time.Now().UTC(),
+	}
 }
 
-func (ci *CloneInstance) Use() {
-	ci.Status = InstanceInUse
+func (ci *CloneInstance) Acquire(taskID string) error {
+	if ci.Status != InstanceIdle {
+		return fmt.Errorf("cannot acquire instance in status %s", ci.Status)
+	}
+	ci.Status = InstanceBusy
+	ci.AssignedTask = taskID
 	ci.UpdatedAt = time.Now().UTC()
-	ci.Logs = append(ci.Logs, "Instance in use at "+ci.UpdatedAt.String())
+	return nil
+}
+
+func (ci *CloneInstance) Release() error {
+	if ci.Status == InstanceDirty {
+		ci.Recycle()
+		return nil
+	}
+	if ci.Status != InstanceBusy {
+		return fmt.Errorf("cannot release instance in status %s", ci.Status)
+	}
+	ci.Status = InstanceIdle
+	ci.AssignedTask = ""
+	ci.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (ci *CloneInstance) MarkDirty() error {
+	if ci.Status != InstanceBusy {
+		return fmt.Errorf("cannot mark dirty instance in status %s", ci.Status)
+	}
+	ci.Status = InstanceDirty
+	ci.UpdatedAt = time.Now().UTC()
+	return nil
 }
 
 func (ci *CloneInstance) Recycle() {
-	ci.Status = InstanceRecycling
+	ci.Status = InstanceIdle
+	ci.AssignedTask = ""
 	ci.UpdatedAt = time.Now().UTC()
-	ci.Logs = append(ci.Logs, "Instance recycling at "+ci.UpdatedAt.String())
-}
-
-func (ci *CloneInstance) Release() {
-	ci.Status = InstanceReleased
-	ci.UpdatedAt = time.Now().UTC()
-	ci.Logs = append(ci.Logs, "Instance released at "+ci.UpdatedAt.String())
-}
-
-func (ci *CloneInstance) IsValidTransition(newStatus CloneInstanceStatus) bool {
-	switch ci.Status {
-	case InstanceIdle:
-		return newStatus == InstanceAllocating
-	case InstanceAllocating:
-		return newStatus == InstanceInUse
-	case InstanceInUse:
-		return newStatus == InstanceRecycling
-	case InstanceRecycling:
-		return newStatus == InstanceReleased || newStatus == InstanceIdle
-	case InstanceReleased:
-		return newStatus == InstanceIdle
-	default:
-		return false
-	}
 }
