@@ -46,6 +46,18 @@ func (r *InMemoryDocumentRepo) FindByProjectID(projectID string) ([]*knowledge.D
 	return result, nil
 }
 
+func (r *InMemoryDocumentRepo) FindByDirectoryID(directoryID string) ([]*knowledge.Document, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*knowledge.Document
+	for _, doc := range r.docs {
+		if doc.DirectoryID == directoryID {
+			result = append(result, doc)
+		}
+	}
+	return result, nil
+}
+
 func (r *InMemoryDocumentRepo) Update(doc *knowledge.Document) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -225,4 +237,70 @@ func (r *InMemoryLineageRepo) findDescendants(documentID string, visited map[str
 			r.findDescendants(l.DocumentID, visited, result)
 		}
 	}
+}
+
+type InMemoryDirectoryRepo struct {
+	dirs map[string]*knowledge.Directory
+	mu   sync.RWMutex
+}
+
+func NewInMemoryDirectoryRepo() *InMemoryDirectoryRepo {
+	return &InMemoryDirectoryRepo{
+		dirs: make(map[string]*knowledge.Directory),
+	}
+}
+
+func (r *InMemoryDirectoryRepo) Save(dir *knowledge.Directory) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.dirs[dir.ID] = dir
+	return nil
+}
+
+func (r *InMemoryDirectoryRepo) FindByID(id string) (*knowledge.Directory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	dir, ok := r.dirs[id]
+	if !ok {
+		return nil, nil
+	}
+	return dir, nil
+}
+
+func (r *InMemoryDirectoryRepo) FindByProjectID(projectID string) ([]*knowledge.Directory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*knowledge.Directory
+	for _, dir := range r.dirs {
+		if dir.ProjectID == projectID {
+			result = append(result, dir)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryDirectoryRepo) FindByParentID(parentID string) ([]*knowledge.Directory, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*knowledge.Directory
+	for _, dir := range r.dirs {
+		if dir.ParentID == parentID {
+			result = append(result, dir)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryDirectoryRepo) Update(dir *knowledge.Directory) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.dirs[dir.ID] = dir
+	return nil
+}
+
+func (r *InMemoryDirectoryRepo) Delete(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.dirs, id)
+	return nil
 }

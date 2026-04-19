@@ -54,9 +54,10 @@ func main() {
 	aiRuntimeService := airuntimeApp.NewAIRuntimeService(providerRepo, chainRepo, callLogRepo, providerRegistry, eventBus)
 
 	documentRepo := persistence.NewInMemoryDocumentRepo()
+	directoryRepo := persistence.NewInMemoryDirectoryRepo()
 	chunkRepo := persistence.NewInMemoryChunkRepo()
 	documentIndexRepo := persistence.NewInMemoryDocumentIndexRepo()
-	knowledgeService := knowledgeApp.NewKnowledgeService(documentRepo, chunkRepo, documentIndexRepo)
+	knowledgeService := knowledgeApp.NewKnowledgeService(documentRepo, directoryRepo, chunkRepo, documentIndexRepo)
 
 	notificationRepo := persistence.NewInMemoryNotificationRepo()
 	subscriptionRepo := persistence.NewInMemorySubscriptionRepo()
