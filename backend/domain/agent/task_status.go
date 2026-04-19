@@ -3,12 +3,12 @@ package agent
 type AgentTaskStatus string
 
 const (
-	TaskPending     AgentTaskStatus = "PENDING"
-	TaskInProgress  AgentTaskStatus = "IN_PROGRESS"
-	TaskCompleted   AgentTaskStatus = "COMPLETED"
-	TaskFailed      AgentTaskStatus = "FAILED"
-	TaskInterrupted  AgentTaskStatus = "INTERRUPTED"
-	TaskArchived    AgentTaskStatus = "ARCHIVED"
+	TaskPending    AgentTaskStatus = "PENDING"
+	TaskInProgress AgentTaskStatus = "IN_PROGRESS"
+	TaskCompleted  AgentTaskStatus = "COMPLETED"
+	TaskFailed     AgentTaskStatus = "FAILED"
+	TaskInterrupted AgentTaskStatus = "INTERRUPTED"
+	TaskArchived   AgentTaskStatus = "ARCHIVED"
 )
 
 func (s AgentTaskStatus) IsValid() bool {

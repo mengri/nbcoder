@@ -3,10 +3,10 @@ package agent
 type AgentType string
 
 const (
-	AgentTypeProduct    AgentType = "PRODUCT"
+	AgentTypeProduct      AgentType = "PRODUCT"
 	AgentTypeArchitecture AgentType = "ARCHITECTURE"
-	AgentTypeManagement AgentType = "MANAGEMENT"
-	AgentTypeTechStack   AgentType = "TECH_STACK"
+	AgentTypeManagement   AgentType = "MANAGEMENT"
+	AgentTypeTechStack    AgentType = "TECH_STACK"
 )
 
 func (t AgentType) IsValid() bool {

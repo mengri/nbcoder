@@ -25,9 +25,9 @@ func NewAgentExecution(id, agentID, taskID string) *AgentExecution {
 		AgentID:   agentID,
 		TaskID:    taskID,
 		StartTime: now,
-		Status:     "IN_PROGRESS",
-		Input:      make(map[string]interface{}),
-		Output:     make(map[string]interface{}),
+		Status:    "IN_PROGRESS",
+		Input:     make(map[string]interface{}),
+		Output:    make(map[string]interface{}),
 	}
 }
 

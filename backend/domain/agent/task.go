@@ -6,21 +6,21 @@ import (
 )
 
 type AgentTask struct {
-	ID               string          `json:"id"`
-	Name             string          `json:"name"`
-	Description       string          `json:"description,omitempty"`
-	AgentType        AgentType       `json:"agent_type"`
-	TaskType         string          `json:"task_type"`
-	Status           AgentTaskStatus `json:"status"`
-	Priority         int             `json:"priority"`
-	AssignedTo       string          `json:"assigned_to,omitempty"`
-	PipelineID       string          `json:"pipeline_id,omitempty"`
-	ProjectID        string          `json:"project_id"`
-	CreatedAt        time.Time       `json:"created_at"`
-	UpdatedAt        time.Time       `json:"updated_at"`
-	StartedAt        *time.Time      `json:"started_at,omitempty"`
-	CompletedAt      *time.Time      `json:"completed_at,omitempty"`
-	Context          map[string]interface{} `json:"context,omitempty"`
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	AgentType   AgentType       `json:"agent_type"`
+	TaskType    string          `json:"task_type"`
+	Status      AgentTaskStatus `json:"status"`
+	Priority    int             `json:"priority"`
+	AssignedTo  string          `json:"assigned_to,omitempty"`
+	PipelineID  string          `json:"pipeline_id,omitempty"`
+	ProjectID   string          `json:"project_id"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
+	StartedAt   *time.Time      `json:"started_at,omitempty"`
+	CompletedAt *time.Time      `json:"completed_at,omitempty"`
+	Context     map[string]interface{} `json:"context,omitempty"`
 }
 
 func NewAgentTask(id, name, description, taskType string, agentType AgentType, projectID string) *AgentTask {
