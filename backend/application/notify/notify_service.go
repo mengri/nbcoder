@@ -11,6 +11,7 @@ import (
 type NotifyService struct {
 	notificationRepo notify.NotificationRepo
 	subscriptionRepo notify.SubscriptionRepo
+	prefRepo         notify.SubscriptionPreferenceRepo
 	channelRepo      notify.ChannelRepo
 	dispatcher       *notify.ChannelDispatcher
 	eventBus         event.EventBus
@@ -19,6 +20,7 @@ type NotifyService struct {
 func NewNotifyService(
 	notificationRepo notify.NotificationRepo,
 	subscriptionRepo notify.SubscriptionRepo,
+	prefRepo notify.SubscriptionPreferenceRepo,
 	channelRepo notify.ChannelRepo,
 	dispatcher *notify.ChannelDispatcher,
 	eventBus event.EventBus,
@@ -26,6 +28,7 @@ func NewNotifyService(
 	return &NotifyService{
 		notificationRepo: notificationRepo,
 		subscriptionRepo: subscriptionRepo,
+		prefRepo:         prefRepo,
 		channelRepo:      channelRepo,
 		dispatcher:       dispatcher,
 		eventBus:        eventBus,
@@ -122,8 +125,46 @@ func (s *NotifyService) NotifyFromDomainEvent(domainEvent event.DomainEvent) {
 		if sub.Muted {
 			continue
 		}
+		pref, _ := s.prefRepo.FindByRecipientAndEventType(sub.Recipient, eventType)
+		if pref != nil && pref.IsChannelMuted(sub.Channel) {
+			continue
+		}
 		title := fmt.Sprintf("Event: %s", eventType)
 		content := fmt.Sprintf("Aggregate %s triggered event %s", domainEvent.AggregateID(), eventType)
 		_, _ = s.Send(title, content, eventType, sub.Channel, sub.Recipient)
 	}
+}
+
+func (s *NotifyService) MuteSubscription(subID string) error {
+	sub, err := s.subscriptionRepo.FindByRecipient(subID)
+	_ = sub
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *NotifyService) MuteChannelForEvent(recipient, eventType string, channel notify.ChannelType) error {
+	pref, _ := s.prefRepo.FindByRecipientAndEventType(recipient, eventType)
+	if pref == nil {
+		pref = notify.NewSubscriptionPreference(uid.NewID(), recipient, eventType)
+		if err := s.prefRepo.Save(pref); err != nil {
+			return err
+		}
+	}
+	pref.MuteChannel(channel)
+	return s.prefRepo.Update(pref)
+}
+
+func (s *NotifyService) UnmuteChannelForEvent(recipient, eventType string, channel notify.ChannelType) error {
+	pref, _ := s.prefRepo.FindByRecipientAndEventType(recipient, eventType)
+	if pref == nil {
+		return fmt.Errorf("preference not found for recipient %s, event %s", recipient, eventType)
+	}
+	pref.UnmuteChannel(channel)
+	return s.prefRepo.Update(pref)
+}
+
+func (s *NotifyService) GetPreferences(recipient string) ([]*notify.SubscriptionPreference, error) {
+	return s.prefRepo.FindByRecipient(recipient)
 }

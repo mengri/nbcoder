@@ -202,3 +202,70 @@ func (r *InMemoryChannelRepo) Delete(id string) error {
 	delete(r.channels, id)
 	return nil
 }
+
+type InMemorySubscriptionPreferenceRepo struct {
+	prefs map[string]*notify.SubscriptionPreference
+	mu    sync.RWMutex
+}
+
+func NewInMemorySubscriptionPreferenceRepo() *InMemorySubscriptionPreferenceRepo {
+	return &InMemorySubscriptionPreferenceRepo{
+		prefs: make(map[string]*notify.SubscriptionPreference),
+	}
+}
+
+func (r *InMemorySubscriptionPreferenceRepo) Save(pref *notify.SubscriptionPreference) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.prefs[pref.ID] = pref
+	return nil
+}
+
+func (r *InMemorySubscriptionPreferenceRepo) FindByRecipient(recipient string) ([]*notify.SubscriptionPreference, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.SubscriptionPreference
+	for _, p := range r.prefs {
+		if p.Recipient == recipient {
+			result = append(result, p)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemorySubscriptionPreferenceRepo) FindByEventType(eventType string) ([]*notify.SubscriptionPreference, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*notify.SubscriptionPreference
+	for _, p := range r.prefs {
+		if p.EventType == eventType {
+			result = append(result, p)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemorySubscriptionPreferenceRepo) FindByRecipientAndEventType(recipient, eventType string) (*notify.SubscriptionPreference, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, p := range r.prefs {
+		if p.Recipient == recipient && p.EventType == eventType {
+			return p, nil
+		}
+	}
+	return nil, nil
+}
+
+func (r *InMemorySubscriptionPreferenceRepo) Update(pref *notify.SubscriptionPreference) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.prefs[pref.ID] = pref
+	return nil
+}
+
+func (r *InMemorySubscriptionPreferenceRepo) Delete(id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.prefs, id)
+	return nil
+}

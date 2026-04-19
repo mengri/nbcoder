@@ -60,12 +60,13 @@ func main() {
 
 	notificationRepo := persistence.NewInMemoryNotificationRepo()
 	subscriptionRepo := persistence.NewInMemorySubscriptionRepo()
+	prefRepo := persistence.NewInMemorySubscriptionPreferenceRepo()
 	channelRepo := persistence.NewInMemoryChannelRepo()
 	dispatcher := notify.NewChannelDispatcher()
 	dispatcher.Register(channel.NewSystemSender())
 	dispatcher.Register(channel.NewWebSocketSender())
 	dispatcher.Register(channel.NewEmailSender())
-	notifyService := notifyApp.NewNotifyService(notificationRepo, subscriptionRepo, channelRepo, dispatcher, eventBus)
+	notifyService := notifyApp.NewNotifyService(notificationRepo, subscriptionRepo, prefRepo, channelRepo, dispatcher, eventBus)
 
 	prRepo := persistence.NewInMemoryPullRequestRepo()
 	gitService := gitApp.NewGitService(prRepo)
