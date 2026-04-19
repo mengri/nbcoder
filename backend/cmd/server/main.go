@@ -15,6 +15,8 @@ import (
 	requirementApp "github.com/mengri/nbcoder/application/requirement"
 	"github.com/mengri/nbcoder/domain/agent"
 	"github.com/mengri/nbcoder/domain/airuntime"
+	"github.com/mengri/nbcoder/domain/notify"
+	"github.com/mengri/nbcoder/infrastructure/channel"
 	"github.com/mengri/nbcoder/infrastructure/eventbus"
 	"github.com/mengri/nbcoder/infrastructure/persistence"
 	"github.com/mengri/nbcoder/interfaces/api"
@@ -58,7 +60,12 @@ func main() {
 
 	notificationRepo := persistence.NewInMemoryNotificationRepo()
 	subscriptionRepo := persistence.NewInMemorySubscriptionRepo()
-	notifyService := notifyApp.NewNotifyService(notificationRepo, subscriptionRepo, eventBus)
+	channelRepo := persistence.NewInMemoryChannelRepo()
+	dispatcher := notify.NewChannelDispatcher()
+	dispatcher.Register(channel.NewSystemSender())
+	dispatcher.Register(channel.NewWebSocketSender())
+	dispatcher.Register(channel.NewEmailSender())
+	notifyService := notifyApp.NewNotifyService(notificationRepo, subscriptionRepo, channelRepo, dispatcher, eventBus)
 
 	prRepo := persistence.NewInMemoryPullRequestRepo()
 	gitService := gitApp.NewGitService(prRepo)
