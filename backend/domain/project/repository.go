@@ -20,3 +20,9 @@ type StandardsRepo interface {
 	FindByProjectID(projectID string) (*Standards, error)
 	Update(standards *Standards) error
 }
+
+type ProjectLifecycleRepo interface {
+	Save(lifecycle *ProjectLifecycle) error
+	FindByProjectID(projectID string) (*ProjectLifecycle, error)
+	Update(lifecycle *ProjectLifecycle) error
+}
