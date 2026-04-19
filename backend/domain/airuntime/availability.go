@@ -1,7 +1,6 @@
 package airuntime
 // availability.go
 // Provider/模型可用性检测与降级
-package airuntime
 
 import "time"
 

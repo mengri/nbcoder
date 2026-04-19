@@ -1,7 +1,7 @@
 package clonepool
 // task_instance_binding.go
 // 任务自动获取与归还克隆实例
-package clonepool
+
 
 import (
 	"github.com/mengri/nbcoder/backend/domain"

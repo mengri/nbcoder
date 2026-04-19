@@ -1,7 +1,7 @@
 package git
 // branch_policy.go
 // 分支策略与命名规范配置与校验
-package git
+
 
 import (
 	"regexp"

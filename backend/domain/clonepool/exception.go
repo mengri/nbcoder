@@ -1,8 +1,6 @@
 package clonepool
 // exception.go
 // 克隆实例异常检测、恢复与状态标记
-package clonepool
-
 import "time"
 
 type ExceptionType string

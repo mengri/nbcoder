@@ -1,7 +1,6 @@
 package airuntime
 // token_usage.go
 // Token计费与调用日志
-package airuntime
 
 import "time"
 

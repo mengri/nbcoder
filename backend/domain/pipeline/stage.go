@@ -1,7 +1,6 @@
 package pipeline
 // stage.go
 // Pipeline 阶段状态机与执行控制
-package pipeline
 
 import "time"
 

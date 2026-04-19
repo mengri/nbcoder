@@ -1,7 +1,6 @@
 package clonepool
 // event.go
 // 克隆池领域事件发布与订阅
-package clonepool
 
 import "time"
 

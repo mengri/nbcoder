@@ -1,7 +1,6 @@
 package clonepool
 // instance.go
 // 克隆实例状态流转与校验
-package clonepool
 
 import "time"
 

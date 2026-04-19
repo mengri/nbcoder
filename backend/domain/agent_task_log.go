@@ -1,7 +1,7 @@
 package domain
+
 // agent_task_log.go
 // AgentTaskLog 任务执行日志与追溯领域模型
-package domain
 
 import (
 	"time"

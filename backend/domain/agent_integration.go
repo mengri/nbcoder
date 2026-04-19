@@ -4,9 +4,9 @@ package domain
 // Agent与Pipeline/ClonePool/AI Runtime集成机制
 
 import (
-	"github.com/mengri/nbcoder/backend/domain/airuntime"
-	"github.com/mengri/nbcoder/backend/domain/clonepool"
-	"github.com/mengri/nbcoder/backend/domain/pipeline"
+	"github.com/mengri/nbcoder/domain/airuntime"
+	"github.com/mengri/nbcoder/domain/clonepool"
+	"github.com/mengri/nbcoder/domain/pipeline"
 )
 
 type AgentIntegration struct {

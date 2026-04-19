@@ -1,7 +1,6 @@
 package airuntime
 // provider.go
 // Provider与模型管理
-package airuntime
 
 type Provider struct {
 	ID      string   `json:"id"`

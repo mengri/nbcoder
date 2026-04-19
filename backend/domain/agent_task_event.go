@@ -1,7 +1,7 @@
 package domain
 // agent_task_event.go
 // AgentTaskEvent 领域事件发布与订阅
-package domain
+
 
 import "time"
 
