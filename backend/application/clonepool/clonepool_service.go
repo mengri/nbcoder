@@ -3,6 +3,7 @@ package clonepool
 import (
 	"github.com/mengri/nbcoder/domain/clonepool"
 	"github.com/mengri/nbcoder/domain/event"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type ClonePoolService struct {
@@ -39,7 +40,7 @@ func (s *ClonePoolService) AcquireInstance(repositoryID, taskID string) (*clonep
 	if err := s.instanceRepo.Update(inst); err != nil {
 		return nil, err
 	}
-	evt := event.NewClonePoolEvent(generateID(), inst.ID, event.CloneAcquiredEvent)
+	evt := event.NewClonePoolEvent(uid.NewID(), inst.ID, event.CloneAcquiredEvent)
 	_ = s.eventBus.Publish(evt)
 	return inst, nil
 }
@@ -55,10 +56,6 @@ func (s *ClonePoolService) ReleaseInstance(instanceID string) error {
 	if err := s.instanceRepo.Update(inst); err != nil {
 		return err
 	}
-	evt := event.NewClonePoolEvent(generateID(), instanceID, event.CloneReleasedEvent)
+	evt := event.NewClonePoolEvent(uid.NewID(), instanceID, event.CloneReleasedEvent)
 	return s.eventBus.Publish(evt)
-}
-
-func generateID() string {
-	return ""
 }

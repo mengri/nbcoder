@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	projectApp "github.com/mengri/nbcoder/application/project"
 	"github.com/mengri/nbcoder/application/dto"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type ProjectHandler struct {
@@ -33,7 +34,7 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	id := generateID()
+	id := uid.NewID()
 	project, err := h.projectService.CreateProject(id, req.Name, req.Description, req.RepoURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

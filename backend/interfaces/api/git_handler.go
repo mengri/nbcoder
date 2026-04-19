@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	gitApp "github.com/mengri/nbcoder/application/git"
 	"github.com/mengri/nbcoder/domain/git"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type GitHandler struct {
@@ -37,7 +38,7 @@ func (h *GitHandler) CreatePullRequest(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	id := generateID()
+	id := uid.NewID()
 	pr, err := h.gitService.CreatePullRequest(id, req.Title, req.SourceBranch, req.TargetBranch)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

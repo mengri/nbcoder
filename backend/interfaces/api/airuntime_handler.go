@@ -7,6 +7,7 @@ import (
 	airuntimeApp "github.com/mengri/nbcoder/application/airuntime"
 	"github.com/mengri/nbcoder/application/dto"
 	"github.com/mengri/nbcoder/domain/airuntime"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type AIRuntimeHandler struct {
@@ -34,7 +35,7 @@ func (h *AIRuntimeHandler) RegisterProvider(c *gin.Context) {
 		return
 	}
 	provider := &airuntime.Provider{
-		ID:        generateID(),
+		ID:        uid.NewID(),
 		Name:      req.Name,
 		APIKeyRef: req.APIKeyRef,
 	}

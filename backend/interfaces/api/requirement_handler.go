@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	reqApp "github.com/mengri/nbcoder/application/requirement"
 	"github.com/mengri/nbcoder/application/dto"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type RequirementHandler struct {
@@ -33,7 +34,7 @@ func (h *RequirementHandler) CreateCard(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	id := generateID()
+	id := uid.NewID()
 	card, err := h.reqService.CreateCard(id, req.Title, req.Description, req.Original, req.ProjectID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

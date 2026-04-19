@@ -3,6 +3,7 @@ package airuntime
 import (
 	"github.com/mengri/nbcoder/domain/airuntime"
 	"github.com/mengri/nbcoder/domain/event"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type AIRuntimeService struct {
@@ -42,11 +43,7 @@ func (s *AIRuntimeService) RecordCall(log *airuntime.CallLog) error {
 	if err := s.callLogRepo.Save(log); err != nil {
 		return err
 	}
-	evt := event.NewAIRuntimeEvent(generateID(), log.ModelID, event.ModelCalledEvent)
+	evt := event.NewAIRuntimeEvent(uid.NewID(), log.ModelID, event.ModelCalledEvent)
 	_ = s.eventBus.Publish(evt)
 	return nil
-}
-
-func generateID() string {
-	return ""
 }

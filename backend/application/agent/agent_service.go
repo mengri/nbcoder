@@ -3,6 +3,7 @@ package agent
 import (
 	"github.com/mengri/nbcoder/domain/agent"
 	"github.com/mengri/nbcoder/domain/event"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type AgentService struct {
@@ -48,7 +49,7 @@ func (s *AgentService) AssignTask(taskID, agentID string) error {
 		return err
 	}
 	evt := event.NewAgentTaskEvent(
-		generateID(), taskID, agentID, event.TaskAssignedEvent,
+		uid.NewID(), taskID, agentID, event.TaskAssignedEvent,
 	)
 	return s.eventBus.Publish(evt)
 }
@@ -66,7 +67,7 @@ func (s *AgentService) CompleteTask(taskID string) error {
 		return err
 	}
 	evt := event.NewAgentTaskEvent(
-		generateID(), taskID, task.AssignedTo, event.TaskCompletedEvent,
+		uid.NewID(), taskID, task.AssignedTo, event.TaskCompletedEvent,
 	)
 	return s.eventBus.Publish(evt)
 }
@@ -84,15 +85,11 @@ func (s *AgentService) FailTask(taskID, reason string) error {
 		return err
 	}
 	evt := event.NewAgentTaskEvent(
-		generateID(), taskID, task.AssignedTo, event.TaskFailedEvent,
+		uid.NewID(), taskID, task.AssignedTo, event.TaskFailedEvent,
 	)
 	return s.eventBus.Publish(evt)
 }
 
 func (s *AgentService) GetTask(taskID string) (*agent.Task, error) {
 	return s.taskRepo.FindByID(taskID)
-}
-
-func generateID() string {
-	return ""
 }

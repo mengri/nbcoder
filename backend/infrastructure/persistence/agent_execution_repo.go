@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"sync"
+	"time"
 
 	"github.com/mengri/nbcoder/domain/agent"
 )
@@ -48,6 +49,14 @@ func (r *InMemoryAgentExecutionRepo) QueryByAgent(agentID string) ([]*agent.Agen
 	return result, nil
 }
 
-func (r *InMemoryAgentExecutionRepo) QueryByTimeRange(start, end interface{}) ([]*agent.AgentExecution, error) {
-	return nil, nil
+func (r *InMemoryAgentExecutionRepo) QueryByTimeRange(start, end time.Time) ([]*agent.AgentExecution, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []*agent.AgentExecution
+	for _, e := range r.executions {
+		if e.Timestamp.After(start) && e.Timestamp.Before(end) {
+			result = append(result, e)
+		}
+	}
+	return result, nil
 }

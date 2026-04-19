@@ -3,6 +3,7 @@ package requirement
 import (
 	"github.com/mengri/nbcoder/domain/event"
 	"github.com/mengri/nbcoder/domain/requirement"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type RequirementService struct {
@@ -28,7 +29,7 @@ func (s *RequirementService) CreateCard(id, title, description, original, projec
 	if err := s.cardRepo.Save(card); err != nil {
 		return nil, err
 	}
-	evt := event.NewRequirementEvent(generateID(), id, event.CardCreatedEvent)
+	evt := event.NewRequirementEvent(uid.NewID(), id, event.CardCreatedEvent)
 	_ = s.eventBus.Publish(evt)
 	return card, nil
 }
@@ -49,14 +50,10 @@ func (s *RequirementService) ConfirmCard(cardID string) error {
 	if err := s.cardRepo.Update(card); err != nil {
 		return err
 	}
-	evt := event.NewRequirementEvent(generateID(), cardID, event.CardConfirmedEvent)
+	evt := event.NewRequirementEvent(uid.NewID(), cardID, event.CardConfirmedEvent)
 	return s.eventBus.Publish(evt)
 }
 
 func (s *RequirementService) GetCard(cardID string) (*requirement.Card, error) {
 	return s.cardRepo.FindByID(cardID)
-}
-
-func generateID() string {
-	return ""
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	agentApp "github.com/mengri/nbcoder/application/agent"
 	"github.com/mengri/nbcoder/application/dto"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type AgentHandler struct {
@@ -35,7 +36,7 @@ func (h *AgentHandler) CreateTask(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	id := generateID()
+	id := uid.NewID()
 	aggregate, err := h.agentService.CreateTask(id, req.Name, req.Description)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -110,8 +111,4 @@ func (h *AgentHandler) GetTask(c *gin.Context) {
 		CreatedAt:   task.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:   task.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	})
-}
-
-func generateID() string {
-	return ""
 }

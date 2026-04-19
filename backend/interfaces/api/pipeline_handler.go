@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	pipelineApp "github.com/mengri/nbcoder/application/pipeline"
 	"github.com/mengri/nbcoder/application/dto"
+	"github.com/mengri/nbcoder/pkg/uid"
 )
 
 type PipelineHandler struct {
@@ -34,7 +35,7 @@ func (h *PipelineHandler) CreatePipeline(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	id := generateID()
+	id := uid.NewID()
 	aggregate, err := h.pipelineService.CreatePipeline(id, req.CardID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
