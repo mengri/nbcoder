@@ -6,20 +6,32 @@
       </template>
     </el-page-header>
 
-    <el-card class="settings-card" v-loading="loading">
+    <el-card
+      v-loading="loading"
+      class="settings-card"
+    >
       <el-tabs v-model="activeTab">
-        <el-tab-pane label="基本信息" name="basic">
+        <el-tab-pane
+          label="基本信息"
+          name="basic"
+        >
           <el-form
             ref="basicFormRef"
             :model="basicForm"
             :rules="basicRules"
             label-width="120px"
           >
-            <el-form-item label="项目名称" prop="name">
+            <el-form-item
+              label="项目名称"
+              prop="name"
+            >
               <el-input v-model="basicForm.name" />
             </el-form-item>
 
-            <el-form-item label="项目描述" prop="description">
+            <el-form-item
+              label="项目描述"
+              prop="description"
+            >
               <el-input
                 v-model="basicForm.description"
                 type="textarea"
@@ -29,20 +41,33 @@
 
             <el-form-item label="项目状态">
               <el-select v-model="basicForm.status">
-                <el-option label="活跃" value="ACTIVE" />
-                <el-option label="归档" value="ARCHIVED" />
+                <el-option
+                  label="活跃"
+                  value="ACTIVE"
+                />
+                <el-option
+                  label="归档"
+                  value="ARCHIVED"
+                />
               </el-select>
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" :loading="saving" @click="saveBasic">
+              <el-button
+                type="primary"
+                :loading="saving"
+                @click="saveBasic"
+              >
                 保存
               </el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane label="开发规范" name="standards">
+        <el-tab-pane
+          label="开发规范"
+          name="standards"
+        >
           <el-form
             ref="standardsFormRef"
             :model="standardsForm"
@@ -58,14 +83,21 @@
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" :loading="saving" @click="saveStandards">
+              <el-button
+                type="primary"
+                :loading="saving"
+                @click="saveStandards"
+              >
                 保存
               </el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane label="分支策略" name="branch">
+        <el-tab-pane
+          label="分支策略"
+          name="branch"
+        >
           <el-form
             ref="branchFormRef"
             :model="branchForm"
@@ -81,14 +113,21 @@
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" :loading="saving" @click="saveBranch">
+              <el-button
+                type="primary"
+                :loading="saving"
+                @click="saveBranch"
+              >
                 保存
               </el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane label="Git 仓库" name="git">
+        <el-tab-pane
+          label="Git 仓库"
+          name="git"
+        >
           <el-form
             ref="gitFormRef"
             :model="gitForm"
@@ -103,7 +142,11 @@
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" :loading="saving" @click="saveGit">
+              <el-button
+                type="primary"
+                :loading="saving"
+                @click="saveGit"
+              >
                 保存
               </el-button>
             </el-form-item>

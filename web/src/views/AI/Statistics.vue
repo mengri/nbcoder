@@ -6,10 +6,16 @@
       </template>
     </el-page-header>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="6">
         <el-card>
-          <el-statistic title="总调用次数" :value="statistics.totalCalls">
+          <el-statistic
+            title="总调用次数"
+            :value="statistics.totalCalls"
+          >
             <template #prefix>
               <el-icon style="vertical-align: -0.125em">
                 <DataLine />
@@ -20,7 +26,10 @@
       </el-col>
       <el-col :span="6">
         <el-card>
-          <el-statistic title="总 Token 使用" :value="statistics.totalTokens">
+          <el-statistic
+            title="总 Token 使用"
+            :value="statistics.totalTokens"
+          >
             <template #prefix>
               <el-icon style="vertical-align: -0.125em">
                 <Coin />
@@ -31,7 +40,12 @@
       </el-col>
       <el-col :span="6">
         <el-card>
-          <el-statistic title="总费用" :value="statistics.totalCost" :precision="4" prefix="$">
+          <el-statistic
+            title="总费用"
+            :value="statistics.totalCost"
+            :precision="4"
+            prefix="$"
+          >
             <template #prefix>
               <el-icon style="vertical-align: -0.125em">
                 <Wallet />
@@ -42,7 +56,10 @@
       </el-col>
       <el-col :span="6">
         <el-card>
-          <el-statistic title="今日调用" :value="statistics.todayCalls">
+          <el-statistic
+            title="今日调用"
+            :value="statistics.todayCalls"
+          >
             <template #prefix>
               <el-icon style="vertical-align: -0.125em">
                 <Calendar />
@@ -53,20 +70,35 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="16">
         <el-card>
           <template #header>
             <div class="card-header">
               <span>调用趋势</span>
-              <el-radio-group v-model="trendPeriod" size="small">
-                <el-radio-button label="7">7天</el-radio-button>
-                <el-radio-button label="30">30天</el-radio-button>
-                <el-radio-button label="90">90天</el-radio-button>
+              <el-radio-group
+                v-model="trendPeriod"
+                size="small"
+              >
+                <el-radio-button label="7">
+                  7天
+                </el-radio-button>
+                <el-radio-button label="30">
+                  30天
+                </el-radio-button>
+                <el-radio-button label="90">
+                  90天
+                </el-radio-button>
               </el-radio-group>
             </div>
           </template>
-          <div ref="trendChartRef" style="width: 100%; height: 400px"></div>
+          <div
+            ref="trendChartRef"
+            style="width: 100%; height: 400px"
+          />
         </el-card>
       </el-col>
 
@@ -75,7 +107,10 @@
           <template #header>
             <span>模型使用分布</span>
           </template>
-          <div ref="modelChartRef" style="width: 100%; height: 400px"></div>
+          <div
+            ref="modelChartRef"
+            style="width: 100%; height: 400px"
+          />
         </el-card>
       </el-col>
     </el-row>
@@ -84,16 +119,38 @@
       <template #header>
         <span>模型使用详情</span>
       </template>
-      <el-table :data="statistics.modelDistribution" style="width: 100%">
-        <el-table-column prop="modelName" label="模型名称" min-width="200" />
-        <el-table-column prop="calls" label="调用次数" width="120" />
-        <el-table-column prop="tokens" label="Token 使用" width="150" />
-        <el-table-column prop="cost" label="费用" width="120">
+      <el-table
+        :data="statistics.modelDistribution"
+        style="width: 100%"
+      >
+        <el-table-column
+          prop="modelName"
+          label="模型名称"
+          min-width="200"
+        />
+        <el-table-column
+          prop="calls"
+          label="调用次数"
+          width="120"
+        />
+        <el-table-column
+          prop="tokens"
+          label="Token 使用"
+          width="150"
+        />
+        <el-table-column
+          prop="cost"
+          label="费用"
+          width="120"
+        >
           <template #default="{ row }">
             {{ formatCost(row.cost) }}
           </template>
         </el-table-column>
-        <el-table-column label="费用占比" width="120">
+        <el-table-column
+          label="费用占比"
+          width="120"
+        >
           <template #default="{ row }">
             {{ formatPercentage(row.cost, statistics.totalCost) }}
           </template>

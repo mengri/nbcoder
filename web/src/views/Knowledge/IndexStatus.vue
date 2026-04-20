@@ -6,13 +6,19 @@
       </template>
     </el-page-header>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="6">
         <el-card>
-          <el-statistic title="总文档数" :value="indexStatus.totalDocuments">
+          <el-statistic
+            title="总文档数"
+            :value="indexStatus.totalDocuments"
+          >
             <template #prefix>
               <el-icon style="vertical-align: -0.125em">
-                <Document />
+                <DocumentIcon />
               </el-icon>
             </template>
           </el-statistic>
@@ -20,7 +26,10 @@
       </el-col>
       <el-col :span="6">
         <el-card>
-          <el-statistic title="已索引文档" :value="indexStatus.indexedDocuments">
+          <el-statistic
+            title="已索引文档"
+            :value="indexStatus.indexedDocuments"
+          >
             <template #prefix>
               <el-icon style="vertical-align: -0.125em">
                 <CircleCheck />
@@ -31,7 +40,10 @@
       </el-col>
       <el-col :span="6">
         <el-card>
-          <el-statistic title="总分片数" :value="indexStatus.totalChunks">
+          <el-statistic
+            title="总分片数"
+            :value="indexStatus.totalChunks"
+          >
             <template #prefix>
               <el-icon style="vertical-align: -0.125em">
                 <Grid />
@@ -42,7 +54,10 @@
       </el-col>
       <el-col :span="6">
         <el-card>
-          <el-statistic title="已索引分片" :value="indexStatus.indexedChunks">
+          <el-statistic
+            title="已索引分片"
+            :value="indexStatus.indexedChunks"
+          >
             <template #prefix>
               <el-icon style="vertical-align: -0.125em">
                 <Finished />
@@ -53,27 +68,40 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="12">
         <el-card>
           <template #header>
             <div class="card-header">
               <span>索引进度</span>
-              <el-tag :type="getStatusType(indexStatus.status)" size="small">
+              <el-tag
+                :type="getStatusType(indexStatus.status)"
+                size="small"
+              >
                 {{ getStatusText(indexStatus.status) }}
               </el-tag>
             </div>
           </template>
           <div class="progress-section">
             <div class="progress-item">
-              <div class="progress-label">文档索引进度</div>
+              <div class="progress-label">
+                文档索引进度
+              </div>
               <el-progress
                 :percentage="documentProgress"
                 :status="getProgressStatus(indexStatus.status)"
               />
             </div>
-            <div class="progress-item" style="margin-top: 24px">
-              <div class="progress-label">分片索引进度</div>
+            <div
+              class="progress-item"
+              style="margin-top: 24px"
+            >
+              <div class="progress-label">
+                分片索引进度
+              </div>
               <el-progress
                 :percentage="chunkProgress"
                 :status="getProgressStatus(indexStatus.status)"
@@ -90,7 +118,10 @@
               <span>索引操作</span>
             </div>
           </template>
-          <el-space direction="vertical" style="width: 100%">
+          <el-space
+            direction="vertical"
+            style="width: 100%"
+          >
             <el-button
               type="primary"
               :loading="rebuilding"
@@ -123,7 +154,10 @@
       <template #header>
         <span>文档索引状态</span>
       </template>
-      <IndexStatusTable :documents="documents" :loading="loading" />
+      <IndexStatusTable
+        :documents="documents"
+        :loading="loading"
+      />
     </el-card>
   </div>
 </template>
@@ -133,7 +167,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Document,
+  Document as DocumentIcon,
   CircleCheck,
   Grid,
   Finished,

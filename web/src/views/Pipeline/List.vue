@@ -6,23 +6,49 @@
       </template>
     </el-page-header>
 
-    <el-card class="table-card" v-loading="loading">
-      <el-table :data="pipelines" style="width: 100%">
-        <el-table-column prop="name" label="名称" min-width="200" />
-        <el-table-column prop="cardId" label="关联卡片" width="150" />
-        <el-table-column label="状态" width="120">
+    <el-card
+      v-loading="loading"
+      class="table-card"
+    >
+      <el-table
+        :data="pipelines"
+        style="width: 100%"
+      >
+        <el-table-column
+          prop="name"
+          label="名称"
+          min-width="200"
+        />
+        <el-table-column
+          prop="cardId"
+          label="关联卡片"
+          width="150"
+        />
+        <el-table-column
+          label="状态"
+          width="120"
+        >
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" size="small">
+            <el-tag
+              :type="getStatusType(row.status)"
+              size="small"
+            >
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="当前阶段" width="150">
+        <el-table-column
+          label="当前阶段"
+          width="150"
+        >
           <template #default="{ row }">
             {{ row.currentStage || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="进度" width="200">
+        <el-table-column
+          label="进度"
+          width="200"
+        >
           <template #default="{ row }">
             <el-progress
               :percentage="getProgress(row)"
@@ -31,12 +57,20 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="180">
+        <el-table-column
+          prop="createdAt"
+          label="创建时间"
+          width="180"
+        >
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
           <template #default="{ row }">
             <el-button
               link
@@ -47,8 +81,14 @@
               查看
             </el-button>
             <el-dropdown @command="(cmd) => handleCommand(cmd, row)">
-              <el-button link type="primary" size="small">
-                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              <el-button
+                link
+                type="primary"
+                size="small"
+              >
+                操作<el-icon class="el-icon--right">
+                  <ArrowDown />
+                </el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>

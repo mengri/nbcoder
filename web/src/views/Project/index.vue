@@ -4,7 +4,10 @@
       <template #content>
         <div class="page-header-content">
           <span class="title">项目管理</span>
-          <el-button type="primary" @click="handleCreate">
+          <el-button
+            type="primary"
+            @click="handleCreate"
+          >
             <el-icon><Plus /></el-icon>
             新建项目
           </el-button>
@@ -25,7 +28,10 @@
       </el-input>
     </div>
 
-    <el-row :gutter="20" v-loading="loading">
+    <el-row
+      v-loading="loading"
+      :gutter="20"
+    >
       <el-col
         v-for="project in filteredProjects"
         :key="project.id"
@@ -35,17 +41,31 @@
         :lg="6"
         class="project-col"
       >
-        <el-card class="project-card" :body-style="{ padding: '20px' }">
+        <el-card
+          class="project-card"
+          :body-style="{ padding: '20px' }"
+        >
           <template #header>
             <div class="card-header">
               <span class="project-name">{{ project.name }}</span>
               <el-dropdown @command="(cmd) => handleCommand(cmd, project)">
-                <el-icon class="more-icon"><MoreFilled /></el-icon>
+                <el-icon class="more-icon">
+                  <MoreFilled />
+                </el-icon>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                    <el-dropdown-item command="settings">设置</el-dropdown-item>
-                    <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                    <el-dropdown-item command="edit">
+                      编辑
+                    </el-dropdown-item>
+                    <el-dropdown-item command="settings">
+                      设置
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      command="delete"
+                      divided
+                    >
+                      删除
+                    </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -53,9 +73,14 @@
           </template>
 
           <div class="project-info">
-            <p class="description">{{ truncateText(project.description, 80) }}</p>
+            <p class="description">
+              {{ truncateText(project.description, 80) }}
+            </p>
             <div class="meta">
-              <el-tag :type="getStatusType(project.status)" size="small">
+              <el-tag
+                :type="getStatusType(project.status)"
+                size="small"
+              >
                 {{ getStatusText(project.status) }}
               </el-tag>
               <span class="time">{{ formatDate(project.createdAt) }}</span>
@@ -74,7 +99,10 @@
         </el-card>
       </el-col>
 
-      <el-col v-if="filteredProjects.length === 0" :span="24">
+      <el-col
+        v-if="filteredProjects.length === 0"
+        :span="24"
+      >
         <el-empty description="暂无项目" />
       </el-col>
     </el-row>

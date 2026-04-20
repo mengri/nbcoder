@@ -6,10 +6,16 @@
       </template>
     </el-page-header>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="8">
         <el-card>
-          <el-statistic title="运行中任务" :value="stats.runningTasks">
+          <el-statistic
+            title="运行中任务"
+            :value="stats.runningTasks"
+          >
             <template #suffix>
               <el-icon style="vertical-align: -0.125em">
                 <Loading />
@@ -20,23 +26,36 @@
       </el-col>
       <el-col :span="8">
         <el-card>
-          <el-statistic title="今日完成" :value="stats.todayCompleted" />
+          <el-statistic
+            title="今日完成"
+            :value="stats.todayCompleted"
+          />
         </el-card>
       </el-col>
       <el-col :span="8">
         <el-card>
-          <el-statistic title="平均耗时" :value="stats.avgDuration" suffix="s" />
+          <el-statistic
+            title="平均耗时"
+            :value="stats.avgDuration"
+            suffix="s"
+          />
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="16">
         <el-card>
           <template #header>
             <div class="card-header">
               <span>执行时间线</span>
-              <el-tag :type="wsConnected ? 'success' : 'danger'" size="small">
+              <el-tag
+                :type="wsConnected ? 'success' : 'danger'"
+                size="small"
+              >
                 {{ wsConnected ? '已连接' : '未连接' }}
               </el-tag>
             </div>
@@ -59,7 +78,12 @@
       <template #header>
         <div class="card-header">
           <span>实时任务监控</span>
-          <el-button size="small" @click="clearHistory">清空历史</el-button>
+          <el-button
+            size="small"
+            @click="clearHistory"
+          >
+            清空历史
+          </el-button>
         </div>
       </template>
       <RealTimeTaskMonitor :tasks="realTimeTasks" />
@@ -70,7 +94,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 import { useWebSocket } from '@/composables/useWebSocket'
 import ExecutionTimeline from '@/components/business/ExecutionTimeline.vue'

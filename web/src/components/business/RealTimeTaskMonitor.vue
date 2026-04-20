@@ -1,7 +1,13 @@
 <template>
   <div class="real-time-task-monitor">
-    <el-empty v-if="tasks.length === 0" description="暂无任务" />
-    <div v-else class="task-list">
+    <el-empty
+      v-if="tasks.length === 0"
+      description="暂无任务"
+    />
+    <div
+      v-else
+      class="task-list"
+    >
       <div
         v-for="task in tasks"
         :key="task.id"
@@ -10,7 +16,10 @@
       >
         <div class="task-header">
           <div class="task-info">
-            <el-tag :type="getStatusType(task.status)" size="small">
+            <el-tag
+              :type="getStatusType(task.status)"
+              size="small"
+            >
               {{ getStatusText(task.status) }}
             </el-tag>
             <span class="task-type">{{ getTypeText(task.type) }}</span>
@@ -21,25 +30,44 @@
         </div>
 
         <div class="task-body">
-          <div v-if="task.skill" class="task-skill">
+          <div
+            v-if="task.skill"
+            class="task-skill"
+          >
             <el-icon><MagicStick /></el-icon>
             <span>Skill: {{ task.skill }}</span>
           </div>
 
-          <div v-if="task.cardId" class="task-card">
+          <div
+            v-if="task.cardId"
+            class="task-card"
+          >
             <el-icon><Document /></el-icon>
             <span>卡片: {{ task.cardId }}</span>
           </div>
 
-          <div v-if="task.error" class="task-error">
-            <el-alert type="error" :closable="false">
+          <div
+            v-if="task.error"
+            class="task-error"
+          >
+            <el-alert
+              type="error"
+              :closable="false"
+            >
               {{ task.error }}
             </el-alert>
           </div>
         </div>
 
-        <div v-if="task.status === 'RUNNING'" class="task-progress">
-          <el-progress :percentage="getProgress(task)" :indeterminate="true" :stroke-width="6" />
+        <div
+          v-if="task.status === 'RUNNING'"
+          class="task-progress"
+        >
+          <el-progress
+            :percentage="getProgress(task)"
+            :indeterminate="true"
+            :stroke-width="6"
+          />
         </div>
       </div>
     </div>
@@ -103,7 +131,7 @@ const getTypeText = (type: string) => {
   return texts[type] || type
 }
 
-const getProgress = (task: AgentTask) => {
+const getProgress = (_task: AgentTask) => {
   return 50
 }
 </script>

@@ -11,11 +11,20 @@
       :rules="rules"
       label-width="100px"
     >
-      <el-form-item label="项目名称" prop="name">
-        <el-input v-model="form.name" placeholder="请输入项目名称" />
+      <el-form-item
+        label="项目名称"
+        prop="name"
+      >
+        <el-input
+          v-model="form.name"
+          placeholder="请输入项目名称"
+        />
       </el-form-item>
 
-      <el-form-item label="项目描述" prop="description">
+      <el-form-item
+        label="项目描述"
+        prop="description"
+      >
         <el-input
           v-model="form.description"
           type="textarea"
@@ -24,21 +33,30 @@
         />
       </el-form-item>
 
-      <el-form-item label="Git 仓库" prop="gitRepoUrl">
+      <el-form-item
+        label="Git 仓库"
+        prop="gitRepoUrl"
+      >
         <el-input
           v-model="form.gitRepoUrl"
           placeholder="请输入 Git 仓库 URL（可选）"
         />
       </el-form-item>
 
-      <el-form-item label="分支" prop="gitBranch">
+      <el-form-item
+        label="分支"
+        prop="gitBranch"
+      >
         <el-input
           v-model="form.gitBranch"
           placeholder="请输入分支名称（可选）"
         />
       </el-form-item>
 
-      <el-form-item label="开发规范" prop="standards">
+      <el-form-item
+        label="开发规范"
+        prop="standards"
+      >
         <el-input
           v-model="form.standards"
           type="textarea"
@@ -47,7 +65,10 @@
         />
       </el-form-item>
 
-      <el-form-item label="分支策略" prop="branchPolicy">
+      <el-form-item
+        label="分支策略"
+        prop="branchPolicy"
+      >
         <el-input
           v-model="form.branchPolicy"
           type="textarea"
@@ -58,8 +79,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
+      <el-button @click="handleClose">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="handleSubmit"
+      >
         {{ isEdit ? '保存' : '创建' }}
       </el-button>
     </template>

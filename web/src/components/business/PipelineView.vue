@@ -1,8 +1,11 @@
 <template>
   <div class="pipeline-view">
-    <div class="pipeline-container" v-if="stages.length > 0">
+    <div
+      v-if="stages.length > 0"
+      class="pipeline-container"
+    >
       <div
-        v-for="(stage, index) in stages"
+        v-for="stage in stages"
         :key="stage.id"
         class="stage-node"
         :class="getStageClass(stage)"
@@ -15,8 +18,12 @@
             </el-icon>
           </div>
           <div class="stage-info">
-            <div class="stage-name">{{ stage.name }}</div>
-            <div class="stage-status">{{ getStatusText(stage.status) }}</div>
+            <div class="stage-name">
+              {{ stage.name }}
+            </div>
+            <div class="stage-status">
+              {{ getStatusText(stage.status) }}
+            </div>
           </div>
         </div>
 
@@ -33,9 +40,12 @@
             </span>
           </div>
 
-          <div v-if="stage.steps.length > 0" class="steps-list">
+          <div
+            v-if="stage.steps.length > 0"
+            class="steps-list"
+          >
             <div
-              v-for="(step, stepIndex) in stage.steps"
+              v-for="step in stage.steps"
               :key="step.id"
               class="step-item"
               :class="getStepClass(step.status)"
@@ -45,13 +55,18 @@
                   <component :is="getStepIcon(step.status)" />
                 </el-icon>
               </div>
-              <div class="step-name">{{ step.name }}</div>
+              <div class="step-name">
+                {{ step.name }}
+              </div>
             </div>
           </div>
         </div>
 
-        <div v-if="index < stages.length - 1" class="stage-connector">
-          <div class="connector-line"></div>
+        <div
+          v-if="index < stages.length - 1"
+          class="stage-connector"
+        >
+          <div class="connector-line" />
           <div class="connector-arrow">
             <el-icon><ArrowDown /></el-icon>
           </div>
@@ -59,7 +74,10 @@
       </div>
     </div>
 
-    <el-empty v-else description="暂无 Pipeline 数据" />
+    <el-empty
+      v-else
+      description="暂无 Pipeline 数据"
+    />
   </div>
 </template>
 

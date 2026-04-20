@@ -1,25 +1,38 @@
 <template>
-  <div class="pipeline-detail" v-loading="loading">
+  <div
+    v-loading="loading"
+    class="pipeline-detail"
+  >
     <el-page-header @back="goBack">
       <template #content>
         <div class="page-header-content">
           <span class="title">{{ pipeline?.name }}</span>
-          <el-tag :type="getStatusType(pipeline?.status)" size="small">
+          <el-tag
+            :type="getStatusType(pipeline?.status)"
+            size="small"
+          >
             {{ getStatusText(pipeline?.status) }}
           </el-tag>
         </div>
       </template>
     </el-page-header>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="16">
         <el-card class="stages-card">
           <template #header>
             <span>执行阶段</span>
           </template>
-          <el-steps :active="activeStage" finish-status="success" process-status="process">
+          <el-steps
+            :active="activeStage"
+            finish-status="success"
+            process-status="process"
+          >
             <el-step
-              v-for="(stage, index) in pipeline?.stages"
+              v-for="stage in pipeline?.stages"
               :key="stage.id"
               :title="stage.name"
               :description="getStageDescription(stage)"
@@ -29,21 +42,31 @@
           </el-steps>
         </el-card>
 
-        <el-card class="timeline-card" style="margin-top: 20px">
+        <el-card
+          class="timeline-card"
+          style="margin-top: 20px"
+        >
           <template #header>
             <span>执行时间线</span>
           </template>
           <el-timeline>
             <el-timeline-item
-              v-for="(stage, index) in pipeline?.stages"
+              v-for="stage in pipeline?.stages"
               :key="stage.id"
               :timestamp="formatDateTime(stage.startTime, stage.endTime)"
               :type="getTimelineType(stage.status)"
             >
               <div class="timeline-content">
-                <div class="stage-name">{{ stage.name }}</div>
-                <div class="stage-status">{{ getStageStatusText(stage.status) }}</div>
-                <div v-if="stage.steps.length > 0" class="steps-list">
+                <div class="stage-name">
+                  {{ stage.name }}
+                </div>
+                <div class="stage-status">
+                  {{ getStageStatusText(stage.status) }}
+                </div>
+                <div
+                  v-if="stage.steps.length > 0"
+                  class="steps-list"
+                >
                   <div
                     v-for="step in stage.steps"
                     :key="step.id"
@@ -69,7 +92,10 @@
           <template #header>
             <span>基本信息</span>
           </template>
-          <el-descriptions :column="1" border>
+          <el-descriptions
+            :column="1"
+            border
+          >
             <el-descriptions-item label="Pipeline ID">
               {{ pipeline?.id }}
             </el-descriptions-item>
@@ -88,12 +114,23 @@
           </el-descriptions>
         </el-card>
 
-        <el-card class="stats-card" style="margin-top: 20px">
+        <el-card
+          class="stats-card"
+          style="margin-top: 20px"
+        >
           <template #header>
             <span>执行统计</span>
           </template>
-          <el-statistic title="总耗时" :value="totalDuration" suffix="s" />
-          <el-statistic title="总步骤数" :value="totalSteps" style="margin-top: 20px" />
+          <el-statistic
+            title="总耗时"
+            :value="totalDuration"
+            suffix="s"
+          />
+          <el-statistic
+            title="总步骤数"
+            :value="totalSteps"
+            style="margin-top: 20px"
+          />
           <el-statistic
             title="失败步骤"
             :value="failedSteps"
@@ -101,7 +138,10 @@
           />
         </el-card>
 
-        <el-card class="actions-card" style="margin-top: 20px">
+        <el-card
+          class="actions-card"
+          style="margin-top: 20px"
+        >
           <template #header>
             <span>操作</span>
           </template>
@@ -212,7 +252,7 @@ const loadPipeline = async () => {
   }
 }
 
-const handleStageClick = (stage: PipelineStage) => {
+const handleStageClick = (_stage: PipelineStage) => {
 }
 
 const handlePause = async () => {

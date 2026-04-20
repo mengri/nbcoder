@@ -12,27 +12,42 @@
       <span>项目管理</span>
     </el-menu-item>
 
-    <el-menu-item v-if="currentProjectId" index="/projects/:id/cards">
+    <el-menu-item
+      v-if="currentProjectId"
+      index="/projects/:id/cards"
+    >
       <el-icon><Document /></el-icon>
       <span>需求卡片</span>
     </el-menu-item>
 
-    <el-menu-item v-if="currentProjectId" index="/projects/:id/pipelines">
+    <el-menu-item
+      v-if="currentProjectId"
+      index="/projects/:id/pipelines"
+    >
       <el-icon><Operation /></el-icon>
       <span>Pipeline</span>
     </el-menu-item>
 
-    <el-menu-item v-if="currentProjectId" index="/projects/:id/agents">
+    <el-menu-item
+      v-if="currentProjectId"
+      index="/projects/:id/agents"
+    >
       <el-icon><View /></el-icon>
       <span>Agent 任务</span>
     </el-menu-item>
 
-    <el-menu-item v-if="currentProjectId" index="/projects/:id/monitor">
+    <el-menu-item
+      v-if="currentProjectId"
+      index="/projects/:id/monitor"
+    >
       <el-icon><Monitor /></el-icon>
       <span>Agent 监控</span>
     </el-menu-item>
 
-    <el-menu-item v-if="currentProjectId" index="/projects/:id/knowledge">
+    <el-menu-item
+      v-if="currentProjectId"
+      index="/projects/:id/knowledge"
+    >
       <el-icon><Reading /></el-icon>
       <span>知识库</span>
     </el-menu-item>

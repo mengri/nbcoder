@@ -3,12 +3,18 @@
     <el-row :gutter="16">
       <el-col :span="8">
         <el-card class="stat-card">
-          <el-statistic title="总调用次数" :value="totalCalls" />
+          <el-statistic
+            title="总调用次数"
+            :value="totalCalls"
+          />
         </el-card>
       </el-col>
       <el-col :span="8">
         <el-card class="stat-card">
-          <el-statistic title="总 Token 使用" :value="totalTokens" />
+          <el-statistic
+            title="总 Token 使用"
+            :value="totalTokens"
+          />
         </el-card>
       </el-col>
       <el-col :span="8">
@@ -23,13 +29,19 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" style="margin-top: 16px">
+    <el-row
+      :gutter="16"
+      style="margin-top: 16px"
+    >
       <el-col :span="12">
         <el-card class="chart-card">
           <template #header>
             <span>调用趋势</span>
           </template>
-          <div ref="trendChartRef" style="width: 100%; height: 300px"></div>
+          <div
+            ref="trendChartRef"
+            style="width: 100%; height: 300px"
+          />
         </el-card>
       </el-col>
       <el-col :span="12">
@@ -37,25 +49,53 @@
           <template #header>
             <span>模型分布</span>
           </template>
-          <div ref="modelChartRef" style="width: 100%; height: 300px"></div>
+          <div
+            ref="modelChartRef"
+            style="width: 100%; height: 300px"
+          />
         </el-card>
       </el-col>
     </el-row>
 
-    <el-card class="table-card" style="margin-top: 16px">
+    <el-card
+      class="table-card"
+      style="margin-top: 16px"
+    >
       <template #header>
         <span>模型使用详情</span>
       </template>
-      <el-table :data="modelDistribution" style="width: 100%" max-height="300">
-        <el-table-column prop="modelName" label="模型名称" />
-        <el-table-column prop="calls" label="调用次数" width="100" />
-        <el-table-column prop="tokens" label="Token 使用" width="120" />
-        <el-table-column prop="cost" label="费用" width="100">
+      <el-table
+        :data="modelDistribution"
+        style="width: 100%"
+        max-height="300"
+      >
+        <el-table-column
+          prop="modelName"
+          label="模型名称"
+        />
+        <el-table-column
+          prop="calls"
+          label="调用次数"
+          width="100"
+        />
+        <el-table-column
+          prop="tokens"
+          label="Token 使用"
+          width="120"
+        />
+        <el-table-column
+          prop="cost"
+          label="费用"
+          width="100"
+        >
           <template #default="{ row }">
             {{ formatCost(row.cost) }}
           </template>
         </el-table-column>
-        <el-table-column label="占比" width="80">
+        <el-table-column
+          label="占比"
+          width="80"
+        >
           <template #default="{ row }">
             {{ formatPercentage(row.cost, totalCost) }}
           </template>

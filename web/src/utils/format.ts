@@ -86,6 +86,10 @@ export const formatPercentage = (value: number, total: number): string => {
   return Math.round((value / total) * 100) + '%'
 }
 
+export const formatTime = (date: string | Date): string => {
+  return formatDate(date, 'HH:mm:ss')
+}
+
 export const truncateText = (text: string, maxLength: number): string => {
   if (!text || text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'

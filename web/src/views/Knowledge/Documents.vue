@@ -6,13 +6,19 @@
       </template>
     </el-page-header>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="6">
         <el-card class="tree-card">
           <template #header>
             <div class="card-header">
               <span>文档目录</span>
-              <el-button size="small" @click="refreshTree">
+              <el-button
+                size="small"
+                @click="refreshTree"
+              >
                 <el-icon><Refresh /></el-icon>
               </el-button>
             </div>
@@ -30,7 +36,11 @@
           <template #header>
             <div class="card-header">
               <span>文档列表</span>
-              <el-button type="primary" size="small" @click="handleUpload">
+              <el-button
+                type="primary"
+                size="small"
+                @click="handleUpload"
+              >
                 <el-icon><Upload /></el-icon>
                 上传文档
               </el-button>
@@ -61,7 +71,9 @@
         drag
         multiple
       >
-        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+        <el-icon class="el-icon--upload">
+          <upload-filled />
+        </el-icon>
         <div class="el-upload__text">
           将文件拖到此处，或<em>点击上传</em>
         </div>
@@ -73,8 +85,14 @@
       </el-upload>
 
       <template #footer>
-        <el-button @click="uploadDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="uploading" @click="handleUploadSubmit">
+        <el-button @click="uploadDialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="uploading"
+          @click="handleUploadSubmit"
+        >
           开始上传
         </el-button>
       </template>
@@ -133,7 +151,7 @@ const handleTreeSelect = (document: Document) => {
   selectedDocumentId.value = document.id
 }
 
-const handleView = (document: Document) => {
+const handleView = (_document: Document) => {
   ElMessage.info('查看文档功能开发中')
 }
 

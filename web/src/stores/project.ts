@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import request from '@/utils/request'
 import type { Project, CreateProjectDto, UpdateProjectDto, PageParams, PageResult } from '@/types/project'
 

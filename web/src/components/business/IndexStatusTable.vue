@@ -1,21 +1,47 @@
 <template>
   <div class="index-status-table">
-    <el-table :data="documents" style="width: 100%" v-loading="loading">
-      <el-table-column prop="name" label="文件名" min-width="200" show-overflow-tooltip />
-      <el-table-column prop="path" label="路径" min-width="250" show-overflow-tooltip />
-      <el-table-column label="状态" width="100">
+    <el-table
+      v-loading="loading"
+      :data="documents"
+      style="width: 100%"
+    >
+      <el-table-column
+        prop="name"
+        label="文件名"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="path"
+        label="路径"
+        min-width="250"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="状态"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status)" size="small">
+          <el-tag
+            :type="getStatusType(row.status)"
+            size="small"
+          >
             {{ getStatusText(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="分片数" width="100">
+      <el-table-column
+        label="分片数"
+        width="100"
+      >
         <template #default="{ row }">
           {{ row.chunks || 0 }}
         </template>
       </el-table-column>
-      <el-table-column label="索引进度" width="180">
+      <el-table-column
+        label="索引进度"
+        width="180"
+      >
         <template #default="{ row }">
           <el-progress
             v-if="row.status === 'INDEXING'"
@@ -27,12 +53,19 @@
           <span v-else>0%</span>
         </template>
       </el-table-column>
-      <el-table-column label="索引时间" width="180">
+      <el-table-column
+        label="索引时间"
+        width="180"
+      >
         <template #default="{ row }">
           {{ row.indexedAt ? formatDate(row.indexedAt) : '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column
+        label="操作"
+        width="150"
+        fixed="right"
+      >
         <template #default="{ row }">
           <el-button
             link
@@ -55,7 +88,10 @@
       </el-table-column>
     </el-table>
 
-    <el-empty v-if="!loading && documents.length === 0" description="暂无文档" />
+    <el-empty
+      v-if="!loading && documents.length === 0"
+      description="暂无文档"
+    />
   </div>
 </template>
 
@@ -73,7 +109,7 @@ withDefaults(defineProps<Props>(), {
   loading: false
 })
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'reindex', document: Document): void
 }>()
 

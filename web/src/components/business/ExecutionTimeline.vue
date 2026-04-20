@@ -1,6 +1,9 @@
 <template>
   <div class="execution-timeline">
-    <el-empty v-if="events.length === 0" description="暂无执行事件" />
+    <el-empty
+      v-if="events.length === 0"
+      description="暂无执行事件"
+    />
     <el-timeline v-else>
       <el-timeline-item
         v-for="(event, index) in events"
@@ -13,7 +16,10 @@
         <el-card class="event-card">
           <div class="event-header">
             <div class="event-info">
-              <el-tag :type="getEventTagType(event.type)" size="small">
+              <el-tag
+                :type="getEventTagType(event.type)"
+                size="small"
+              >
                 {{ getEventText(event.type) }}
               </el-tag>
               <span class="task-type">{{ getTypeText(event.task?.type) }}</span>
@@ -24,23 +30,38 @@
           </div>
 
           <div class="event-body">
-            <div v-if="event.task?.skill" class="event-skill">
+            <div
+              v-if="event.task?.skill"
+              class="event-skill"
+            >
               <el-icon><MagicStick /></el-icon>
               <span>Skill: {{ event.task.skill }}</span>
             </div>
 
-            <div v-if="event.task?.cardId" class="event-card">
+            <div
+              v-if="event.task?.cardId"
+              class="event-card"
+            >
               <el-icon><Document /></el-icon>
               <span>卡片: {{ event.task.cardId }}</span>
             </div>
 
-            <div v-if="event.task?.error" class="event-error">
-              <el-alert type="error" :closable="false">
+            <div
+              v-if="event.task?.error"
+              class="event-error"
+            >
+              <el-alert
+                type="error"
+                :closable="false"
+              >
                 {{ event.task.error }}
               </el-alert>
             </div>
 
-            <div v-if="event.task?.duration" class="event-duration">
+            <div
+              v-if="event.task?.duration"
+              class="event-duration"
+            >
               <el-icon><Clock /></el-icon>
               <span>耗时: {{ formatDuration(event.task.duration) }}</span>
             </div>

@@ -1,14 +1,23 @@
 <template>
-  <div class="card-detail" v-loading="loading">
+  <div
+    v-loading="loading"
+    class="card-detail"
+  >
     <el-page-header @back="goBack">
       <template #content>
         <div class="page-header-content">
           <span class="title">{{ card?.title }}</span>
           <div class="actions">
-            <el-tag :type="getStatusType(card?.status)" size="small">
+            <el-tag
+              :type="getStatusType(card?.status)"
+              size="small"
+            >
               {{ getStatusText(card?.status) }}
             </el-tag>
-            <el-tag :type="getPriorityType(card?.priority)" size="small">
+            <el-tag
+              :type="getPriorityType(card?.priority)"
+              size="small"
+            >
               {{ getPriorityText(card?.priority) }}
             </el-tag>
           </div>
@@ -16,13 +25,19 @@
       </template>
     </el-page-header>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="16">
         <el-card class="info-card">
           <template #header>
             <span>基本信息</span>
           </template>
-          <el-descriptions :column="2" border>
+          <el-descriptions
+            :column="2"
+            border
+          >
             <el-descriptions-item label="卡片ID">
               {{ card?.id }}
             </el-descriptions-item>
@@ -41,14 +56,20 @@
           </el-descriptions>
         </el-card>
 
-        <el-card class="description-card" style="margin-top: 20px">
+        <el-card
+          class="description-card"
+          style="margin-top: 20px"
+        >
           <template #header>
             <span>描述</span>
           </template>
           <p>{{ card?.description }}</p>
         </el-card>
 
-        <el-card class="raw-input-card" style="margin-top: 20px">
+        <el-card
+          class="raw-input-card"
+          style="margin-top: 20px"
+        >
           <template #header>
             <span>原始输入</span>
           </template>
@@ -72,12 +93,18 @@
           <template #header>
             <div class="card-header">
               <span>依赖关系</span>
-              <el-button size="small" @click="handleAddDependency">
+              <el-button
+                size="small"
+                @click="handleAddDependency"
+              >
                 添加依赖
               </el-button>
             </div>
           </template>
-          <div v-if="card?.dependencies.length === 0" class="empty">
+          <div
+            v-if="card?.dependencies.length === 0"
+            class="empty"
+          >
             暂无依赖
           </div>
           <el-tag
@@ -91,7 +118,10 @@
           </el-tag>
         </el-card>
 
-        <el-card class="operations-card" style="margin-top: 20px">
+        <el-card
+          class="operations-card"
+          style="margin-top: 20px"
+        >
           <template #header>
             <span>快速操作</span>
           </template>
@@ -131,16 +161,27 @@
           </el-space>
         </el-card>
 
-        <el-card class="pipeline-card" style="margin-top: 20px">
+        <el-card
+          class="pipeline-card"
+          style="margin-top: 20px"
+        >
           <template #header>
             <span>Pipeline 执行</span>
           </template>
           <div v-if="card?.pipelineId">
-            <el-button type="primary" size="small" link @click="viewPipeline">
+            <el-button
+              type="primary"
+              size="small"
+              link
+              @click="viewPipeline"
+            >
               查看 Pipeline
             </el-button>
           </div>
-          <div v-else class="empty">
+          <div
+            v-else
+            class="empty"
+          >
             尚未启动 Pipeline
           </div>
         </el-card>

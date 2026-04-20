@@ -1,39 +1,87 @@
 <template>
   <div class="card-list">
-    <el-table :data="cards" style="width: 100%" v-loading="loading">
-      <el-table-column prop="title" label="标题" min-width="200" />
-      <el-table-column prop="description" label="描述" min-width="250" show-overflow-tooltip />
-      <el-table-column label="状态" width="100">
+    <el-table
+      v-loading="loading"
+      :data="cards"
+      style="width: 100%"
+    >
+      <el-table-column
+        prop="title"
+        label="标题"
+        min-width="200"
+      />
+      <el-table-column
+        prop="description"
+        label="描述"
+        min-width="250"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="状态"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status)" size="small">
+          <el-tag
+            :type="getStatusType(row.status)"
+            size="small"
+          >
             {{ getStatusText(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="优先级" width="100">
+      <el-table-column
+        label="优先级"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="getPriorityType(row.priority)" size="small">
+          <el-tag
+            :type="getPriorityType(row.priority)"
+            size="small"
+          >
             {{ getPriorityText(row.priority) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="180">
+      <el-table-column
+        prop="createdAt"
+        label="创建时间"
+        width="180"
+      >
         <template #default="{ row }">
           {{ formatDate(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column v-if="showActions" label="操作" width="200" fixed="right">
+      <el-table-column
+        v-if="showActions"
+        label="操作"
+        width="200"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="$emit('view', row)">
+          <el-button
+            link
+            type="primary"
+            size="small"
+            @click="$emit('view', row)"
+          >
             查看
           </el-button>
           <el-dropdown @command="(cmd) => $emit('command', cmd, row)">
-            <el-button link type="primary" size="small">
-              更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            <el-button
+              link
+              type="primary"
+              size="small"
+            >
+              更多<el-icon class="el-icon--right">
+                <ArrowDown />
+              </el-icon>
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <slot name="dropdown-items" :card="row"></slot>
+                <slot
+                  name="dropdown-items"
+                  :card="row"
+                />
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -43,19 +91,20 @@
 
     <el-pagination
       v-if="showPagination"
-      v-model:current-page="page"
-      v-model:page-size="pageSize"
+      :current-page="currentPage"
+      :page-size="currentPageSize"
       :total="total"
       :page-sizes="[10, 20, 50, 100]"
       layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 20px; justify-content: flex-end"
-      @size-change="$emit('page-change', page, pageSize)"
-      @current-change="$emit('page-change', page, pageSize)"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/format'
 import type { Card } from '@/types/card'
@@ -70,7 +119,7 @@ interface Props {
   total?: number
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   loading: false,
   showActions: true,
   showPagination: true,
@@ -79,11 +128,32 @@ withDefaults(defineProps<Props>(), {
   total: 0
 })
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'view', card: Card): void
   (e: 'command', command: string, card: Card): void
   (e: 'page-change', page: number, pageSize: number): void
 }>()
+
+const currentPage = ref(props.page)
+const currentPageSize = ref(props.pageSize)
+
+watch(() => props.page, (newPage) => {
+  currentPage.value = newPage
+})
+
+watch(() => props.pageSize, (newSize) => {
+  currentPageSize.value = newSize
+})
+
+const handleSizeChange = (size: number) => {
+  currentPageSize.value = size
+  emit('page-change', currentPage.value, currentPageSize.value)
+}
+
+const handleCurrentChange = (page: number) => {
+  currentPage.value = page
+  emit('page-change', currentPage.value, currentPageSize.value)
+}
 
 const getStatusType = (status: string) => {
   const types: Record<string, any> = {

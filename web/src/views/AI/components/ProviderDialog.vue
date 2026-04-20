@@ -11,22 +11,56 @@
       :rules="rules"
       label-width="100px"
     >
-      <el-form-item label="名称" prop="name">
-        <el-input v-model="form.name" placeholder="请输入 Provider 名称" />
+      <el-form-item
+        label="名称"
+        prop="name"
+      >
+        <el-input
+          v-model="form.name"
+          placeholder="请输入 Provider 名称"
+        />
       </el-form-item>
 
-      <el-form-item label="类型" prop="type">
-        <el-select v-model="form.type" placeholder="请选择 Provider 类型" style="width: 100%">
-          <el-option label="OpenAI" value="openai" />
-          <el-option label="Azure OpenAI" value="azure-openai" />
-          <el-option label="Anthropic" value="anthropic" />
-          <el-option label="Google" value="google" />
-          <el-option label="Hugging Face" value="huggingface" />
-          <el-option label="自定义" value="custom" />
+      <el-form-item
+        label="类型"
+        prop="type"
+      >
+        <el-select
+          v-model="form.type"
+          placeholder="请选择 Provider 类型"
+          style="width: 100%"
+        >
+          <el-option
+            label="OpenAI"
+            value="openai"
+          />
+          <el-option
+            label="Azure OpenAI"
+            value="azure-openai"
+          />
+          <el-option
+            label="Anthropic"
+            value="anthropic"
+          />
+          <el-option
+            label="Google"
+            value="google"
+          />
+          <el-option
+            label="Hugging Face"
+            value="huggingface"
+          />
+          <el-option
+            label="自定义"
+            value="custom"
+          />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="API Key" prop="apiKey">
+      <el-form-item
+        label="API Key"
+        prop="apiKey"
+      >
         <el-input
           v-model="form.apiKey"
           type="password"
@@ -36,23 +70,38 @@
       </el-form-item>
 
       <el-form-item label="Base URL">
-        <el-input v-model="form.baseUrl" placeholder="请输入 Base URL（可选）" />
+        <el-input
+          v-model="form.baseUrl"
+          placeholder="请输入 Base URL（可选）"
+        />
       </el-form-item>
 
       <el-form-item label="测试连接">
-        <el-button :loading="testing" @click="testConnection">
+        <el-button
+          :loading="testing"
+          @click="testConnection"
+        >
           <el-icon><Connection /></el-icon>
           测试连接
         </el-button>
-        <span v-if="testResult" :class="['test-result', testResult.success ? 'success' : 'error']">
+        <span
+          v-if="testResult"
+          :class="['test-result', testResult.success ? 'success' : 'error']"
+        >
           {{ testResult.message }}
         </span>
       </el-form-item>
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
+      <el-button @click="handleClose">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="handleSubmit"
+      >
         {{ isEdit ? '保存' : '创建' }}
       </el-button>
     </template>

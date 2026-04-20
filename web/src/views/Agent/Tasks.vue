@@ -7,7 +7,10 @@
     </el-page-header>
 
     <el-card class="filter-card">
-      <el-form :inline="true" :model="filters">
+      <el-form
+        :inline="true"
+        :model="filters"
+      >
         <el-form-item label="任务类型">
           <el-select
             v-model="filters.type"
@@ -55,36 +58,66 @@
       </el-form>
     </el-card>
 
-    <el-card class="table-card" v-loading="loading">
-      <el-table :data="tasks" style="width: 100%">
-        <el-table-column prop="type" label="类型" width="150">
+    <el-card
+      v-loading="loading"
+      class="table-card"
+    >
+      <el-table
+        :data="tasks"
+        style="width: 100%"
+      >
+        <el-table-column
+          prop="type"
+          label="类型"
+          width="150"
+        >
           <template #default="{ row }">
             {{ getTypeText(row.type) }}
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column
+          label="状态"
+          width="100"
+        >
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" size="small">
+            <el-tag
+              :type="getStatusType(row.status)"
+              size="small"
+            >
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Skill" width="120">
+        <el-table-column
+          label="Skill"
+          width="120"
+        >
           <template #default="{ row }">
             {{ row.skill || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="耗时" width="120">
+        <el-table-column
+          label="耗时"
+          width="120"
+        >
           <template #default="{ row }">
             {{ row.duration ? formatDuration(row.duration) : '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="180">
+        <el-table-column
+          prop="createdAt"
+          label="创建时间"
+          width="180"
+        >
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
           <template #default="{ row }">
             <el-button
               link
@@ -127,7 +160,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { formatDate, formatDuration } from '@/utils/format'
-import type { AgentTask, AgentType, AgentTaskStatus } from '@/types/agent'
+import type { AgentTask } from '@/types/agent'
 
 const route = useRoute()
 const router = useRouter()
@@ -197,7 +230,7 @@ const handleViewLogs = (task: AgentTask) => {
   router.push(`/projects/${projectId}/agent-tasks/${task.id}/logs`)
 }
 
-const handleRetry = (task: AgentTask) => {
+const handleRetry = (_task: AgentTask) => {
   ElMessage.info('重试功能开发中')
 }
 

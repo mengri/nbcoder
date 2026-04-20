@@ -2,7 +2,7 @@
   <div class="pipeline-timeline">
     <el-timeline>
       <el-timeline-item
-        v-for="(stage, index) in stages"
+        v-for="stage in stages"
         :key="stage.id"
         :timestamp="formatTimestamp(stage)"
         :type="getTimelineType(stage.status)"
@@ -13,7 +13,10 @@
           <div class="stage-header">
             <div class="stage-info">
               <span class="stage-name">{{ stage.name }}</span>
-              <el-tag :type="getStatusType(stage.status)" size="small">
+              <el-tag
+                :type="getStatusType(stage.status)"
+                size="small"
+              >
                 {{ getStatusText(stage.status) }}
               </el-tag>
             </div>
@@ -22,9 +25,12 @@
             </div>
           </div>
 
-          <div v-if="stage.steps.length > 0" class="steps-container">
+          <div
+            v-if="stage.steps.length > 0"
+            class="steps-container"
+          >
             <div
-              v-for="(step, stepIndex) in stage.steps"
+              v-for="step in stage.steps"
               :key="step.id"
               class="step-item"
             >
@@ -36,21 +42,37 @@
               <div class="step-content">
                 <div class="step-header">
                   <span class="step-name">{{ step.name }}</span>
-                  <el-tag v-if="step.status" :type="getStatusType(step.status)" size="small">
+                  <el-tag
+                    v-if="step.status"
+                    :type="getStatusType(step.status)"
+                    size="small"
+                  >
                     {{ getStatusText(step.status) }}
                   </el-tag>
                 </div>
                 <div class="step-time">
                   {{ formatStepTime(step) }}
                 </div>
-                <div v-if="step.error" class="step-error">
-                  <el-alert type="error" :closable="false">
+                <div
+                  v-if="step.error"
+                  class="step-error"
+                >
+                  <el-alert
+                    type="error"
+                    :closable="false"
+                  >
                     {{ step.error }}
                   </el-alert>
                 </div>
-                <div v-if="step.output" class="step-output">
+                <div
+                  v-if="step.output"
+                  class="step-output"
+                >
                   <el-collapse>
-                    <el-collapse-item title="输出" name="output">
+                    <el-collapse-item
+                      title="输出"
+                      name="output"
+                    >
                       <pre class="code-block">{{ formatJson(step.output) }}</pre>
                     </el-collapse-item>
                   </el-collapse>

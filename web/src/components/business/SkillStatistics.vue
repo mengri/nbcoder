@@ -1,7 +1,13 @@
 <template>
   <div class="skill-statistics">
-    <el-empty v-if="skills.length === 0" description="暂无统计数据" />
-    <div v-else class="stats-list">
+    <el-empty
+      v-if="skills.length === 0"
+      description="暂无统计数据"
+    />
+    <div
+      v-else
+      class="stats-list"
+    >
       <div
         v-for="(skill, index) in sortedSkills"
         :key="skill.name"
@@ -27,8 +33,14 @@
       </div>
     </div>
 
-    <div v-if="skills.length > 0" class="stats-summary">
-      <el-statistic title="总调用次数" :value="totalCount" />
+    <div
+      v-if="skills.length > 0"
+      class="stats-summary"
+    >
+      <el-statistic
+        title="总调用次数"
+        :value="totalCount"
+      />
     </div>
   </div>
 </template>

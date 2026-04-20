@@ -15,7 +15,11 @@
             <component :is="getFileIcon(data)" />
           </el-icon>
           <span class="node-label">{{ node.label }}</span>
-          <el-tag v-if="data.status" :type="getStatusType(data.status)" size="small">
+          <el-tag
+            v-if="data.status"
+            :type="getStatusType(data.status)"
+            size="small"
+          >
             {{ getStatusText(data.status) }}
           </el-tag>
         </div>
@@ -26,7 +30,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Folder, FolderOpened, Document } from '@element-plus/icons-vue'
+import { Folder, Document as DocumentIcon } from '@element-plus/icons-vue'
 import type { Document } from '@/types/knowledge'
 
 interface Props {
@@ -92,7 +96,7 @@ const getFileIcon = (data: any) => {
   if (data.children && data.children.length > 0) {
     return Folder
   }
-  return Document
+  return DocumentIcon
 }
 
 const getStatusType = (status: string) => {

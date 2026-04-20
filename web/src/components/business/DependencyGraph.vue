@@ -1,7 +1,13 @@
 <template>
   <div class="dependency-graph">
-    <el-empty v-if="!cards || cards.length === 0" description="暂无数据" />
-    <div v-else class="graph-container">
+    <el-empty
+      v-if="!cards || cards.length === 0"
+      description="暂无数据"
+    />
+    <div
+      v-else
+      class="graph-container"
+    >
       <div
         v-for="card in cards"
         :key="card.id"
@@ -10,18 +16,33 @@
         @click="handleCardClick(card)"
       >
         <div class="card-header">
-          <el-tag :type="getStatusType(card.status)" size="small">
+          <el-tag
+            :type="getStatusType(card.status)"
+            size="small"
+          >
             {{ getStatusText(card.status) }}
           </el-tag>
-          <el-tag :type="getPriorityType(card.priority)" size="small">
+          <el-tag
+            :type="getPriorityType(card.priority)"
+            size="small"
+          >
             {{ getPriorityText(card.priority) }}
           </el-tag>
         </div>
-        <div class="card-title">{{ card.title }}</div>
-        <div class="card-id">{{ card.id }}</div>
+        <div class="card-title">
+          {{ card.title }}
+        </div>
+        <div class="card-id">
+          {{ card.id }}
+        </div>
 
-        <div v-if="card.dependencies.length > 0" class="dependencies">
-          <div class="dep-label">依赖:</div>
+        <div
+          v-if="card.dependencies.length > 0"
+          class="dependencies"
+        >
+          <div class="dep-label">
+            依赖:
+          </div>
           <el-tag
             v-for="depId in card.dependencies"
             :key="depId"
@@ -33,7 +54,10 @@
         </div>
       </div>
 
-      <svg class="connections" v-if="cards.length > 0">
+      <svg
+        v-if="cards.length > 0"
+        class="connections"
+      >
         <line
           v-for="(connection, index) in connections"
           :key="index"
@@ -54,7 +78,10 @@
             refY="3.5"
             orient="auto"
           >
-            <polygon points="0 0, 10 3.5, 0 7" fill="#409eff" />
+            <polygon
+              points="0 0, 10 3.5, 0 7"
+              fill="#409eff"
+            />
           </marker>
         </defs>
       </svg>

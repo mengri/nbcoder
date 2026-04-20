@@ -7,7 +7,10 @@
     </el-page-header>
 
     <el-card class="filter-card">
-      <el-form :inline="true" :model="filters">
+      <el-form
+        :inline="true"
+        :model="filters"
+      >
         <el-form-item label="状态">
           <el-select
             v-model="filters.status"
@@ -54,7 +57,10 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="handleCreate">
+          <el-button
+            type="primary"
+            @click="handleCreate"
+          >
             <el-icon><Plus /></el-icon>
             新建卡片
           </el-button>
@@ -62,35 +68,73 @@
       </el-form>
     </el-card>
 
-    <el-card class="table-card" v-loading="loading">
-      <el-table :data="cards" style="width: 100%">
-        <el-table-column prop="title" label="标题" min-width="200" />
-        <el-table-column prop="description" label="描述" min-width="250" show-overflow-tooltip />
-        <el-table-column label="状态" width="100">
+    <el-card
+      v-loading="loading"
+      class="table-card"
+    >
+      <el-table
+        :data="cards"
+        style="width: 100%"
+      >
+        <el-table-column
+          prop="title"
+          label="标题"
+          min-width="200"
+        />
+        <el-table-column
+          prop="description"
+          label="描述"
+          min-width="250"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          label="状态"
+          width="100"
+        >
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" size="small">
+            <el-tag
+              :type="getStatusType(row.status)"
+              size="small"
+            >
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="优先级" width="100">
+        <el-table-column
+          label="优先级"
+          width="100"
+        >
           <template #default="{ row }">
-            <el-tag :type="getPriorityType(row.priority)" size="small">
+            <el-tag
+              :type="getPriorityType(row.priority)"
+              size="small"
+            >
               {{ getPriorityText(row.priority) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="依赖" width="80">
+        <el-table-column
+          label="依赖"
+          width="80"
+        >
           <template #default="{ row }">
             <span>{{ row.dependencies.length }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="180">
+        <el-table-column
+          prop="createdAt"
+          label="创建时间"
+          width="180"
+        >
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column
+          label="操作"
+          width="280"
+          fixed="right"
+        >
           <template #default="{ row }">
             <el-button
               link
@@ -101,24 +145,46 @@
               查看
             </el-button>
             <el-dropdown @command="(cmd) => handleCommand(cmd, row)">
-              <el-button link type="primary" size="small">
-                更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              <el-button
+                link
+                type="primary"
+                size="small"
+              >
+                更多<el-icon class="el-icon--right">
+                  <ArrowDown />
+                </el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="confirm" :disabled="!canConfirm(row)">
+                  <el-dropdown-item
+                    command="confirm"
+                    :disabled="!canConfirm(row)"
+                  >
                     确认
                   </el-dropdown-item>
-                  <el-dropdown-item command="start" :disabled="!canStart(row)">
+                  <el-dropdown-item
+                    command="start"
+                    :disabled="!canStart(row)"
+                  >
                     启动
                   </el-dropdown-item>
-                  <el-dropdown-item command="complete" :disabled="!canComplete(row)">
+                  <el-dropdown-item
+                    command="complete"
+                    :disabled="!canComplete(row)"
+                  >
                     完成
                   </el-dropdown-item>
-                  <el-dropdown-item command="abandon" :disabled="!canAbandon(row)">
+                  <el-dropdown-item
+                    command="abandon"
+                    :disabled="!canAbandon(row)"
+                  >
                     废弃
                   </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided :disabled="!canDelete(row)">
+                  <el-dropdown-item
+                    command="delete"
+                    divided
+                    :disabled="!canDelete(row)"
+                  >
                     删除
                   </el-dropdown-item>
                 </el-dropdown-menu>
@@ -150,7 +216,7 @@ import { Search, Plus, ArrowDown } from '@element-plus/icons-vue'
 import { useCardStore } from '@/stores/card'
 import { useProjectStore } from '@/stores/project'
 import { formatDate } from '@/utils/format'
-import type { Card, CardStatus, CardPriority } from '@/types/card'
+import type { Card } from '@/types/card'
 
 const route = useRoute()
 const router = useRouter()
