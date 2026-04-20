@@ -3,6 +3,8 @@ package sqlite
 import (
 	"fmt"
 
+	"time"
+
 	"github.com/mengri/nbcoder/domain/pipeline"
 	"github.com/mengri/nbcoder/infrastructure/database/models"
 	"gorm.io/gorm"
@@ -93,12 +95,22 @@ func (r *PipelineRepo) modelToDomain(m *models.Pipeline) *pipeline.Pipeline {
 	if len(m.StageRecords) > 0 {
 		domainPipeline.Records = make([]*pipeline.StageRecord, len(m.StageRecords))
 		for i, r := range m.StageRecords {
+			var startedAt time.Time
+			if r.StartedAt != nil {
+				startedAt = *r.StartedAt
+			}
+
+			var endedAt time.Time
+			if r.CompletedAt != nil {
+				endedAt = *r.CompletedAt
+			}
+
 			domainPipeline.Records[i] = &pipeline.StageRecord{
 				ID:           r.ID,
-				StageID:      r.StageID,
+				StageID:      "",
 				Status:       pipeline.StageStatus(r.Status),
-				StartedAt:    r.StartedAt,
-				EndedAt:      r.EndedAt,
+				StartedAt:    startedAt,
+				EndedAt:      endedAt,
 				Output:       r.Output,
 				ReviewResult: "",
 				Reviewer:     "",

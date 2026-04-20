@@ -252,9 +252,10 @@ func TestConfigManager_GetAllConfigs(t *testing.T) {
 
 	var globalCount, projectCount int
 	for _, config := range configs {
-		if config.Scope == ConfigScopeGlobal {
+		switch config.Scope {
+		case ConfigScopeGlobal:
 			globalCount++
-		} else if config.Scope == ConfigScopeProject {
+		case ConfigScopeProject:
 			projectCount++
 		}
 	}

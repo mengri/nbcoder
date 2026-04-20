@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"testing"
 
 	"github.com/mengri/nbcoder/domain/project"
@@ -167,7 +168,7 @@ func TestProjectRepo_FindByStatus(t *testing.T) {
 	repo.Save(project1)
 	repo.Save(project2)
 
-	activeProjects, err := repo.FindByStatus(string(project.ProjectActive))
+	activeProjects, err := repo.FindByStatus(project.ProjectActive)
 	if err != nil {
 		t.Fatalf("Failed to find active projects: %v", err)
 	}
@@ -242,7 +243,7 @@ func TestTransactionWithRepository(t *testing.T) {
 	tm := database.NewTransactionManager(dbManager.GetDB())
 	repo := NewProjectRepo(dbManager.GetDB())
 
-	err := tm.Execute(nil, func(ctx interface{}, txDB *gorm.DB) error {
+	err := tm.Execute(t.Context(), func(ctx context.Context, txDB *gorm.DB) error {
 		testProject := project.NewProject("test-id-9", "Test Project 9", "Description", "https://github.com/test/repo")
 		return repo.Save(testProject)
 	})

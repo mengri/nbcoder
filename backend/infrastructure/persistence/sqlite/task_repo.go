@@ -3,7 +3,6 @@ package sqlite
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/mengri/nbcoder/domain/agent"
 	"github.com/mengri/nbcoder/infrastructure/database/models"
@@ -19,7 +18,7 @@ func NewTaskRepo(db *gorm.DB) agent.TaskRepo {
 }
 
 func (r *TaskRepo) Save(task *agent.Task) error {
-	contextJSON, err := json.Marshal(task.Context)
+	_, err := json.Marshal(task.Context)
 	if err != nil {
 		return fmt.Errorf("failed to marshal task context: %w", err)
 	}
@@ -72,7 +71,7 @@ func (r *TaskRepo) FindByProjectID(projectID string) ([]*agent.Task, error) {
 	return r.modelsToDomain(models), nil
 }
 
-func (r *TaskRepo) FindByStatus(status string) ([]*agent.Task, error) {
+func (r *TaskRepo) FindByStatus(status agent.TaskStatus) ([]*agent.Task, error) {
 	var models []models.Task
 	result := r.db.Where("status = ?", status).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
@@ -113,7 +112,7 @@ func (r *TaskRepo) FindAll() ([]*agent.Task, error) {
 }
 
 func (r *TaskRepo) Update(task *agent.Task) error {
-	contextJSON, err := json.Marshal(task.Context)
+	_, err := json.Marshal(task.Context)
 	if err != nil {
 		return fmt.Errorf("failed to marshal task context: %w", err)
 	}

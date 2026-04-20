@@ -83,7 +83,7 @@ func (r *ProjectRepo) Delete(id string) error {
 	return nil
 }
 
-func (r *ProjectRepo) FindByStatus(status string) ([]*project.Project, error) {
+func (r *ProjectRepo) FindByStatus(status project.ProjectStatus) ([]*project.Project, error) {
 	var models []models.Project
 	result := r.db.Where("status = ?", status).Find(&models)
 	if result.Error != nil {

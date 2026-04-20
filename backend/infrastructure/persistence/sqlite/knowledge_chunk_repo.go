@@ -10,6 +10,11 @@ type DocumentChunkRepo struct {
 	db *gorm.DB
 }
 
+// DeleteByDocumentID implements [knowledge.ChunkRepo].
+func (r *DocumentChunkRepo) DeleteByDocumentID(documentID string) error {
+	panic("unimplemented")
+}
+
 func NewDocumentChunkRepo(db *gorm.DB) *DocumentChunkRepo {
 	return &DocumentChunkRepo{db: db}
 }
@@ -94,6 +99,17 @@ type DocumentIndexRepo struct {
 	db *gorm.DB
 }
 
+// DeleteByDocumentID implements [knowledge.DocumentIndexRepo].
+func (r *DocumentIndexRepo) DeleteByDocumentID(documentID string) error {
+	panic("unimplemented")
+
+}
+
+// Search implements [knowledge.DocumentIndexRepo].
+func (r *DocumentIndexRepo) Search(query *knowledge.SearchQuery) ([]*knowledge.SearchResult, error) {
+	panic("unimplemented")
+}
+
 func NewDocumentIndexRepo(db *gorm.DB) *DocumentIndexRepo {
 	return &DocumentIndexRepo{db: db}
 }
@@ -155,10 +171,10 @@ func (r *DocumentIndexRepo) Delete(id string) error {
 
 func (r *DocumentIndexRepo) modelToDomain(m *models.DocumentIndex) *knowledge.DocumentIndex {
 	return &knowledge.DocumentIndex{
-		ID:        m.ID,
+		ID:         m.ID,
 		DocumentID: m.DocumentID,
-		ChunkID:   "",
-		Embedding: []float64{},
+		ChunkID:    "",
+		Embedding:  []float64{},
 	}
 }
 

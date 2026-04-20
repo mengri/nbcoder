@@ -6,6 +6,7 @@ type ProjectRepo interface {
 	FindAll() ([]*Project, error)
 	Update(project *Project) error
 	Delete(id string) error
+	FindByStatus(active ProjectStatus) ([]*Project, error)
 }
 
 type GlobalConfigRepo interface {
