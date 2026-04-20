@@ -1,8 +1,11 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	agentApp "github.com/mengri/nbcoder/application/agent"
@@ -24,6 +27,7 @@ import (
 	"github.com/mengri/nbcoder/infrastructure/git"
 	"github.com/mengri/nbcoder/infrastructure/persistence/sqlite"
 	"github.com/mengri/nbcoder/interfaces/api"
+	embeddedWeb "github.com/mengri/nbcoder/web/embedded"
 )
 
 func main() {
@@ -94,6 +98,15 @@ func main() {
 	api.NewKnowledgeHandler(knowledgeService).RegisterRoutes(apiGroup)
 	api.NewNotifyHandler(notifyService).RegisterRoutes(apiGroup)
 	api.NewGitHandler(gitService).RegisterRoutes(apiGroup)
+
+	embedFS := embeddedWeb.WebFS()
+	fileServer := http.FileServer(http.FS(embedFS))
+	router.NoRoute(func(c *gin.Context) {
+		if c.Request.Method == "GET" && c.Request.URL.Path != "/api/" {
+			fileServer.ServeHTTP(c.Writer, c.Request)
+		}
+	})
+	log.Println("Embedded web assets loaded")
 
 	log.Println("Starting NBCoder server on :8080")
 	if err := router.Run(":8080"); err != nil {

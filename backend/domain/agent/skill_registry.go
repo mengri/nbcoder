@@ -2,7 +2,26 @@ package agent
 
 import (
 	"sync"
+	"time"
 )
+
+// ExecutionContext Skill 执行上下文
+type ExecutionContext struct {
+	TaskID      string
+	ProjectID   string
+	StartTime   time.Time
+	Timeout     time.Duration
+	Environment map[string]interface{}
+}
+
+// ExecutionResult Skill 执行结果
+type ExecutionResult struct {
+	Success    bool
+	Output     interface{}
+	Error      error
+	Duration   time.Duration
+	Metrics    map[string]interface{}
+}
 
 // SkillExecutor 定义 Skill 执行接口
 type SkillExecutor interface {

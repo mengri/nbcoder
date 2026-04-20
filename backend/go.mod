@@ -7,6 +7,16 @@ require (
 	github.com/google/uuid v1.6.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.30.0
+	github.com/mengri/nbcoder/web/embedded v0.0.0
+)
+
+replace github.com/mengri/nbcoder/web/embedded v0.0.0 => ../web/embedded
+
+require (
+	github.com/gin-gonic/gin v1.12.0
+	github.com/google/uuid v1.6.0
+	gorm.io/driver/sqlite v1.6.0
+	gorm.io/gorm v1.30.0
 )
 
 require (
