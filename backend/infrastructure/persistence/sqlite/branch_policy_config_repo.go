@@ -18,16 +18,16 @@ func NewBranchPolicyConfigRepo(db *gorm.DB) project.BranchPolicyConfigRepo {
 
 func (r *BranchPolicyConfigRepo) Save(c *project.BranchPolicyConfig) error {
 	model := &models.BranchPolicyConfig{
-		ID:               c.ID,
-		ProjectID:        c.ProjectID,
-		PolicyName:       c.PolicyName,
-		PolicyConfig:     c.PolicyConfig,
-		RequireReviews:   c.RequireReviews,
-		MinReviewers:     c.MinReviewers,
-		RequireTests:     c.RequireTests,
-		AutoMergeEnabled: c.AutoMergeEnabled,
-		CreatedAt:        c.CreatedAt,
-		UpdatedAt:        c.UpdatedAt,
+		ID:          c.ID,
+		ProjectID:   c.ProjectID,
+		PolicyName:  "",
+		PolicyConfig: "",
+		RequireReviews: false,
+		MinReviewers:   0,
+		RequireTests:   false,
+		AutoMergeEnabled: false,
+		CreatedAt:   c.CreatedAt,
+		UpdatedAt:   c.UpdatedAt,
 	}
 
 	result := r.db.Save(model)
@@ -62,16 +62,7 @@ func (r *BranchPolicyConfigRepo) FindByID(id string) (*project.BranchPolicyConfi
 
 func (r *BranchPolicyConfigRepo) Update(c *project.BranchPolicyConfig) error {
 	model := &models.BranchPolicyConfig{
-		ID:               c.ID,
-		ProjectID:        c.ProjectID,
-		PolicyName:       c.PolicyName,
-		PolicyConfig:     c.PolicyConfig,
-		RequireReviews:   c.RequireReviews,
-		MinReviewers:     c.MinReviewers,
-		RequireTests:     c.RequireTests,
-		AutoMergeEnabled: c.AutoMergeEnabled,
-		CreatedAt:        c.CreatedAt,
-		UpdatedAt:        c.UpdatedAt,
+		ProjectID: c.ProjectID,
 	}
 
 	result := r.db.Model(&models.BranchPolicyConfig{}).Where("id = ?", c.ID).Updates(model)
@@ -104,16 +95,13 @@ func (r *BranchPolicyConfigRepo) FindByPolicyName(projectID, policyName string) 
 
 func (r *BranchPolicyConfigRepo) modelToDomain(m *models.BranchPolicyConfig) *project.BranchPolicyConfig {
 	return &project.BranchPolicyConfig{
-		ID:               m.ID,
-		ProjectID:        m.ProjectID,
-		PolicyName:       m.PolicyName,
-		PolicyConfig:     m.PolicyConfig,
-		RequireReviews:   m.RequireReviews,
-		MinReviewers:     m.MinReviewers,
-		RequireTests:     m.RequireTests,
-		AutoMergeEnabled: m.AutoMergeEnabled,
-		CreatedAt:        m.CreatedAt,
-		UpdatedAt:        m.UpdatedAt,
+		ID:          m.ID,
+		ProjectID:   m.ProjectID,
+		Pattern:     "",
+		Description: "",
+		IsDefault:   false,
+		CreatedAt:   m.CreatedAt,
+		UpdatedAt:   m.UpdatedAt,
 	}
 }
 

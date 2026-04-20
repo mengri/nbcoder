@@ -164,6 +164,16 @@ func (r *PullRequestRepo) FindByProjectID(projectID string) ([]*git.PullRequest,
 	return r.modelsToDomain(models), nil
 }
 
+func (r *PullRequestRepo) FindByBranch(sourceBranch string) ([]*git.PullRequest, error) {
+	var models []models.PullRequest
+	result := r.db.Where("source_branch = ?", sourceBranch).Order("created_at DESC").Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find pull requests by source branch: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
+}
+
 func (r *PullRequestRepo) Update(pr *git.PullRequest) error {
 	model := &models.PullRequest{
 		ID:             pr.ID,

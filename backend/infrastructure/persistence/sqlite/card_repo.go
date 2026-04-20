@@ -103,9 +103,9 @@ func (r *CardRepo) FindByProjectID(projectID string) ([]*requirement.Card, error
 	return r.modelsToDomain(models), nil
 }
 
-func (r *CardRepo) FindByStatus(status string) ([]*requirement.Card, error) {
+func (r *CardRepo) FindByStatus(status requirement.CardStatus) ([]*requirement.Card, error) {
 	var models []models.Card
-	result := r.db.Where("status = ?", status).Order("created_at DESC").Find(&models)
+	result := r.db.Where("status = ?", string(status)).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find cards by status: %w", result.Error)
 	}

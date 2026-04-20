@@ -21,12 +21,10 @@ func (r *SubscriptionPreferenceRepo) Save(pref *notify.SubscriptionPreference) e
 		ID:              pref.ID,
 		Recipient:       pref.Recipient,
 		EventType:       pref.EventType,
-		EnabledChannels: pref.EnabledChannels,
-		MinPriority:     string(pref.MinPriority),
-		DigestEnabled:   pref.DigestEnabled,
-		DigestFrequency: pref.DigestFrequency,
-		CreatedAt:       pref.CreatedAt,
-		UpdatedAt:       pref.UpdatedAt,
+		EnabledChannels: "",
+		MinPriority:     "",
+		DigestEnabled:   false,
+		DigestFrequency: "",
 	}
 
 	result := r.db.Save(model)
@@ -71,15 +69,8 @@ func (r *SubscriptionPreferenceRepo) FindByRecipientAndEventType(recipient, even
 
 func (r *SubscriptionPreferenceRepo) Update(pref *notify.SubscriptionPreference) error {
 	model := &models.SubscriptionPreference{
-		ID:              pref.ID,
-		Recipient:       pref.Recipient,
-		EventType:       pref.EventType,
-		EnabledChannels: pref.EnabledChannels,
-		MinPriority:     string(pref.MinPriority),
-		DigestEnabled:   pref.DigestEnabled,
-		DigestFrequency: pref.DigestFrequency,
-		CreatedAt:       pref.CreatedAt,
-		UpdatedAt:       pref.UpdatedAt,
+		Recipient: pref.Recipient,
+		EventType: pref.EventType,
 	}
 
 	result := r.db.Model(&models.SubscriptionPreference{}).Where("id = ?", pref.ID).Updates(model)
@@ -99,15 +90,10 @@ func (r *SubscriptionPreferenceRepo) Delete(id string) error {
 
 func (r *SubscriptionPreferenceRepo) modelToDomain(m *models.SubscriptionPreference) *notify.SubscriptionPreference {
 	return &notify.SubscriptionPreference{
-		ID:              m.ID,
-		Recipient:       m.Recipient,
-		EventType:       m.EventType,
-		EnabledChannels: m.EnabledChannels,
-		MinPriority:     notify.NotificationPriority(m.MinPriority),
-		DigestEnabled:   m.DigestEnabled,
-		DigestFrequency: m.DigestFrequency,
-		CreatedAt:       m.CreatedAt,
-		UpdatedAt:       m.UpdatedAt,
+		ID:            m.ID,
+		Recipient:     m.Recipient,
+		EventType:     m.EventType,
+		MutedChannels: []notify.ChannelType{},
 	}
 }
 
@@ -132,11 +118,11 @@ func (r *NotificationTemplateRepo) Save(template *notify.NotificationTemplate) e
 		ID:         template.ID,
 		Name:       template.Name,
 		EventType:  template.EventType,
-		Subject:    template.Subject,
-		Body:       template.Body,
-		Channel:    string(template.Channel),
-		Variables:  template.Variables,
-		IsActive:   template.IsActive,
+		Subject:    template.SubjectTemplate,
+		Body:       template.BodyTemplate,
+		Channel:    "",
+		Variables:  "",
+		IsActive:   true,
 		CreatedAt:  template.CreatedAt,
 		UpdatedAt:  template.UpdatedAt,
 	}
@@ -173,16 +159,10 @@ func (r *NotificationTemplateRepo) FindByEventType(eventType string) ([]*notify.
 
 func (r *NotificationTemplateRepo) Update(template *notify.NotificationTemplate) error {
 	model := &models.NotificationTemplate{
-		ID:         template.ID,
 		Name:       template.Name,
 		EventType:  template.EventType,
-		Subject:    template.Subject,
-		Body:       template.Body,
-		Channel:    string(template.Channel),
-		Variables:  template.Variables,
-		IsActive:   template.IsActive,
-		CreatedAt:  template.CreatedAt,
-		UpdatedAt:  template.UpdatedAt,
+		Subject:    template.SubjectTemplate,
+		Body:       template.BodyTemplate,
 	}
 
 	result := r.db.Model(&models.NotificationTemplate{}).Where("id = ?", template.ID).Updates(model)
@@ -215,16 +195,13 @@ func (r *NotificationTemplateRepo) FindByName(name string) (*notify.Notification
 
 func (r *NotificationTemplateRepo) modelToDomain(m *models.NotificationTemplate) *notify.NotificationTemplate {
 	return &notify.NotificationTemplate{
-		ID:         m.ID,
-		Name:       m.Name,
-		EventType:  m.EventType,
-		Subject:    m.Subject,
-		Body:       m.Body,
-		Channel:    notify.ChannelType(m.Channel),
-		Variables:  m.Variables,
-		IsActive:   m.IsActive,
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
+		ID:              m.ID,
+		Name:            m.Name,
+		EventType:       m.EventType,
+		SubjectTemplate: m.Subject,
+		BodyTemplate:    m.Body,
+		CreatedAt:       m.CreatedAt,
+		UpdatedAt:       m.UpdatedAt,
 	}
 }
 
@@ -250,11 +227,9 @@ func (r *NotificationHistoryRepo) Save(history *notify.NotificationHistory) erro
 		NotificationID: history.NotificationID,
 		Channel:        string(history.Channel),
 		Recipient:      history.Recipient,
-		Status:         history.Status,
-		SentAt:         history.SentAt,
+		Status:         string(history.Status),
+		SentAt:         *history.SentAt,
 		Error:          history.Error,
-		CreatedAt:      history.CreatedAt,
-		UpdatedAt:      history.UpdatedAt,
 	}
 
 	result := r.db.Save(model)
@@ -284,7 +259,7 @@ func (r *NotificationHistoryRepo) FindByRecipient(recipient string) ([]*notify.N
 	return r.modelsToDomain(models), nil
 }
 
-func (r *NotificationHistoryRepo) FindByTimeRange(start, end int64) ([]*notify.NotificationHistory, error) {
+func (r *NotificationHistoryRepo) FindByTimeRange(start, end time.Time) ([]*notify.NotificationHistory, error) {
 	var models []models.NotificationHistory
 	result := r.db.Where("created_at BETWEEN ? AND ?", start, end).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
@@ -300,11 +275,9 @@ func (r *NotificationHistoryRepo) modelToDomain(m *models.NotificationHistory) *
 		NotificationID: m.NotificationID,
 		Channel:        notify.ChannelType(m.Channel),
 		Recipient:      m.Recipient,
-		Status:         m.Status,
-		SentAt:         m.SentAt,
+		Status:         notify.HistoryStatus(m.Status),
+		SentAt:         &m.SentAt,
 		Error:          m.Error,
-		CreatedAt:      m.CreatedAt,
-		UpdatedAt:      m.UpdatedAt,
 	}
 }
 

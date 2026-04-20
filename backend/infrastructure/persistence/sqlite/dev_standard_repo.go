@@ -22,7 +22,7 @@ func (r *DevStandardRepo) Save(s *project.DevStandard) error {
 		ProjectID:   s.ProjectID,
 		Name:        s.Name,
 		Description: s.Description,
-		StandardType: s.Type,
+		StandardType: string(s.RuleType),
 		CreatedAt:   s.CreatedAt,
 		UpdatedAt:   s.UpdatedAt,
 	}
@@ -59,13 +59,9 @@ func (r *DevStandardRepo) FindByID(id string) (*project.DevStandard, error) {
 
 func (r *DevStandardRepo) Update(s *project.DevStandard) error {
 	model := &models.DevStandard{
-		ID:          s.ID,
-		ProjectID:   s.ProjectID,
 		Name:        s.Name,
 		Description: s.Description,
-		StandardType: s.Type,
-		CreatedAt:   s.CreatedAt,
-		UpdatedAt:   s.UpdatedAt,
+		StandardType: string(s.RuleType),
 	}
 
 	result := r.db.Model(&models.DevStandard{}).Where("id = ?", s.ID).Updates(model)
@@ -99,7 +95,7 @@ func (r *DevStandardRepo) modelToDomain(m *models.DevStandard) *project.DevStand
 		ProjectID:   m.ProjectID,
 		Name:        m.Name,
 		Description: m.Description,
-		Type:        m.StandardType,
+		RuleType:    project.RuleType(m.StandardType),
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}

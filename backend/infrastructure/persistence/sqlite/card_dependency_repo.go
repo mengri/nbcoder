@@ -20,10 +20,8 @@ func (r *CardDependencyRepo) Save(d *requirement.CardDependency) error {
 	model := &models.CardDependency{
 		ID:              d.ID,
 		CardID:          d.CardID,
-		DependsOnCardID: d.DependsOnCardID,
-		DependencyType:  string(d.DependencyType),
-		CreatedAt:       d.CreatedAt,
-		UpdatedAt:       d.UpdatedAt,
+		DependsOnCardID: d.DependsOnID,
+		DependencyType:  string(d.Type),
 	}
 
 	result := r.db.Save(model)
@@ -58,12 +56,9 @@ func (r *CardDependencyRepo) FindAll() ([]*requirement.CardDependency, error) {
 
 func (r *CardDependencyRepo) Update(d *requirement.CardDependency) error {
 	model := &models.CardDependency{
-		ID:              d.ID,
 		CardID:          d.CardID,
-		DependsOnCardID: d.DependsOnCardID,
-		DependencyType:  string(d.DependencyType),
-		CreatedAt:       d.CreatedAt,
-		UpdatedAt:       d.UpdatedAt,
+		DependsOnCardID: d.DependsOnID,
+		DependencyType:  string(d.Type),
 	}
 
 	result := r.db.Model(&models.CardDependency{}).Where("id = ?", d.ID).Updates(model)
@@ -77,6 +72,14 @@ func (r *CardDependencyRepo) Delete(id string) error {
 	result := r.db.Delete(&models.CardDependency{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete card dependency: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *CardDependencyRepo) DeleteByCardID(cardID string) error {
+	result := r.db.Where("card_id = ?", cardID).Delete(&models.CardDependency{})
+	if result.Error != nil {
+		return fmt.Errorf("failed to delete card dependencies by card id: %w", result.Error)
 	}
 	return nil
 }
@@ -101,6 +104,10 @@ func (r *CardDependencyRepo) FindByDependsOnCardID(dependsOnCardID string) ([]*r
 	return r.modelsToDomain(models), nil
 }
 
+func (r *CardDependencyRepo) FindByDependsOnID(dependsOnID string) ([]*requirement.CardDependency, error) {
+	return r.FindByDependsOnCardID(dependsOnID)
+}
+
 func (r *CardDependencyRepo) FindByCardIDAndDependsOnCardID(cardID, dependsOnCardID string) (*requirement.CardDependency, error) {
 	var model models.CardDependency
 	result := r.db.Where("card_id = ? AND depends_on_card_id = ?", cardID, dependsOnCardID).First(&model)
@@ -116,12 +123,10 @@ func (r *CardDependencyRepo) FindByCardIDAndDependsOnCardID(cardID, dependsOnCar
 
 func (r *CardDependencyRepo) modelToDomain(m *models.CardDependency) *requirement.CardDependency {
 	return &requirement.CardDependency{
-		ID:              m.ID,
-		CardID:          m.CardID,
-		DependsOnCardID: m.DependsOnCardID,
-		DependencyType:  requirement.DependencyType(m.DependencyType),
-		CreatedAt:       m.CreatedAt,
-		UpdatedAt:       m.UpdatedAt,
+		ID:          m.ID,
+		CardID:      m.CardID,
+		DependsOnID: m.DependsOnCardID,
+		Type:        requirement.DependencyType(m.DependencyType),
 	}
 }
 

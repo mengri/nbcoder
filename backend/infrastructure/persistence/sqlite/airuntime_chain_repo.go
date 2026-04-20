@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -19,9 +18,6 @@ func NewModelChainRepo(db *gorm.DB) airuntime.ChainRepo {
 }
 
 func (r *ModelChainRepo) Save(chain *airuntime.Chain) error {
-	modelsJSON, _ := json.Marshal(chain.Models)
-	routesJSON, _ := json.Marshal(chain.Routes)
-
 	model := &models.ModelChain{
 		ID:        chain.ID,
 		Name:      chain.Name,
@@ -92,16 +88,16 @@ func (r *CallLogRepo) Save(log *airuntime.CallLog) error {
 		ID:         log.ID,
 		AgentID:    log.AgentID,
 		ModelID:    log.ModelID,
-		CallType:   log.CallType,
+		CallType:   "API_CALL",
 		Input:      log.Input,
 		Output:     log.Output,
-		TokensUsed: log.TokensUsed,
-		Cost:       log.Cost,
-		LatencyMs:  log.LatencyMs,
-		Status:     log.Status,
-		Error:      log.Error,
-		CreatedAt:  log.CreatedAt,
-		UpdatedAt:  log.UpdatedAt,
+		TokensUsed: log.Tokens,
+		Cost:       0,
+		LatencyMs:  0,
+		Status:     "SUCCESS",
+		Error:      "",
+		CreatedAt:  log.Timestamp,
+		UpdatedAt:  time.Now(),
 	}
 
 	result := r.db.Save(model)
@@ -121,7 +117,7 @@ func (r *CallLogRepo) FindByAgentID(agentID string) ([]*airuntime.CallLog, error
 	return r.modelsToDomain(models), nil
 }
 
-func (r *CallLogRepo) FindByTimeRange(start, end int64) ([]*airuntime.CallLog, error) {
+func (r *CallLogRepo) FindByTimeRange(start, end time.Time) ([]*airuntime.CallLog, error) {
 	var models []models.CallLog
 	result := r.db.Where("created_at BETWEEN ? AND ?", start, end).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
@@ -153,19 +149,13 @@ func (r *CallLogRepo) FindByStatus(status string) ([]*airuntime.CallLog, error) 
 
 func (r *CallLogRepo) modelToDomain(m *models.CallLog) *airuntime.CallLog {
 	return &airuntime.CallLog{
-		ID:         m.ID,
-		AgentID:    m.AgentID,
-		ModelID:    m.ModelID,
-		CallType:   m.CallType,
-		Input:      m.Input,
-		Output:     m.Output,
-		TokensUsed: m.TokensUsed,
-		Cost:       m.Cost,
-		LatencyMs:  m.LatencyMs,
-		Status:     m.Status,
-		Error:      m.Error,
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
+		ID:        m.ID,
+		AgentID:   m.AgentID,
+		ModelID:   m.ModelID,
+		Input:     m.Input,
+		Output:    m.Output,
+		Tokens:    m.TokensUsed,
+		Timestamp: m.CreatedAt,
 	}
 }
 

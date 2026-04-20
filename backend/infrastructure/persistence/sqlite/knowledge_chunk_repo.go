@@ -1,8 +1,6 @@
 package sqlite
 
 import (
-	"encoding/json"
-
 	"github.com/mengri/nbcoder/domain/knowledge"
 	"github.com/mengri/nbcoder/infrastructure/database/models"
 	"gorm.io/gorm"
@@ -17,15 +15,12 @@ func NewDocumentChunkRepo(db *gorm.DB) *DocumentChunkRepo {
 }
 
 func (r *DocumentChunkRepo) Save(chunk *knowledge.Chunk) error {
-	embeddingJSON, _ := json.Marshal(chunk.Embedding)
 	model := &models.DocumentChunk{
 		ID:         chunk.ID,
 		DocumentID: chunk.DocumentID,
 		Content:    chunk.Content,
-		ChunkIndex: chunk.ChunkIndex,
-		Embedding:  chunk.Embedding,
-		CreatedAt:  chunk.CreatedAt,
-		UpdatedAt:  chunk.UpdatedAt,
+		ChunkIndex: chunk.Index,
+		Embedding:  []float64{},
 	}
 
 	result := r.db.Save(model)
@@ -59,15 +54,11 @@ func (r *DocumentChunkRepo) FindByDocumentID(documentID string) ([]*knowledge.Ch
 }
 
 func (r *DocumentChunkRepo) Update(chunk *knowledge.Chunk) error {
-	embeddingJSON, _ := json.Marshal(chunk.Embedding)
 	model := &models.DocumentChunk{
-		ID:         chunk.ID,
 		DocumentID: chunk.DocumentID,
 		Content:    chunk.Content,
-		ChunkIndex: chunk.ChunkIndex,
-		Embedding:  chunk.Embedding,
-		CreatedAt:  chunk.CreatedAt,
-		UpdatedAt:  chunk.UpdatedAt,
+		ChunkIndex: chunk.Index,
+		Embedding:  []float64{},
 	}
 
 	result := r.db.Model(&models.DocumentChunk{}).Where("id = ?", chunk.ID).Updates(model)
@@ -87,10 +78,7 @@ func (r *DocumentChunkRepo) modelToDomain(m *models.DocumentChunk) *knowledge.Ch
 		ID:         m.ID,
 		DocumentID: m.DocumentID,
 		Content:    m.Content,
-		ChunkIndex: m.ChunkIndex,
-		Embedding:  m.Embedding,
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
+		Index:      m.ChunkIndex,
 	}
 }
 
@@ -114,10 +102,8 @@ func (r *DocumentIndexRepo) Save(index *knowledge.DocumentIndex) error {
 	model := &models.DocumentIndex{
 		ID:         index.ID,
 		DocumentID: index.DocumentID,
-		IndexName:  index.IndexName,
-		IndexData:  models.JSONMap(index.IndexData),
-		CreatedAt:  index.CreatedAt,
-		UpdatedAt:  index.UpdatedAt,
+		IndexName:  "",
+		IndexData:  models.JSONMap{},
 	}
 
 	result := r.db.Save(model)
@@ -152,12 +138,7 @@ func (r *DocumentIndexRepo) FindByDocumentID(documentID string) ([]*knowledge.Do
 
 func (r *DocumentIndexRepo) Update(index *knowledge.DocumentIndex) error {
 	model := &models.DocumentIndex{
-		ID:         index.ID,
 		DocumentID: index.DocumentID,
-		IndexName:  index.IndexName,
-		IndexData:  models.JSONMap(index.IndexData),
-		CreatedAt:  index.CreatedAt,
-		UpdatedAt:  index.UpdatedAt,
 	}
 
 	result := r.db.Model(&models.DocumentIndex{}).Where("id = ?", index.ID).Updates(model)
@@ -174,12 +155,10 @@ func (r *DocumentIndexRepo) Delete(id string) error {
 
 func (r *DocumentIndexRepo) modelToDomain(m *models.DocumentIndex) *knowledge.DocumentIndex {
 	return &knowledge.DocumentIndex{
-		ID:         m.ID,
+		ID:        m.ID,
 		DocumentID: m.DocumentID,
-		IndexName:  m.IndexName,
-		IndexData:  map[string]interface{}(m.IndexData),
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
+		ChunkID:   "",
+		Embedding: []float64{},
 	}
 }
 

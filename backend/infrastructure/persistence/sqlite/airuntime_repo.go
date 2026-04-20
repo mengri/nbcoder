@@ -21,10 +21,8 @@ func (r *ProviderRepo) Save(provider *airuntime.Provider) error {
 		ID:        provider.ID,
 		Name:      provider.Name,
 		APIKeyRef: provider.APIKeyRef,
-		BaseURL:   provider.BaseURL,
-		IsActive:  provider.IsActive,
-		CreatedAt: provider.CreatedAt,
-		UpdatedAt: provider.UpdatedAt,
+		BaseURL:   "",
+		IsActive:  true,
 	}
 
 	result := r.db.Save(model)
@@ -59,13 +57,8 @@ func (r *ProviderRepo) FindAll() ([]*airuntime.Provider, error) {
 
 func (r *ProviderRepo) Update(provider *airuntime.Provider) error {
 	model := &models.Provider{
-		ID:        provider.ID,
 		Name:      provider.Name,
 		APIKeyRef: provider.APIKeyRef,
-		BaseURL:   provider.BaseURL,
-		IsActive:  provider.IsActive,
-		CreatedAt: provider.CreatedAt,
-		UpdatedAt: provider.UpdatedAt,
 	}
 
 	result := r.db.Model(&models.Provider{}).Where("id = ?", provider.ID).Updates(model)
@@ -103,21 +96,16 @@ func (r *ProviderRepo) modelToDomain(m *models.Provider) *airuntime.Provider {
 		ID:        m.ID,
 		Name:      m.Name,
 		APIKeyRef: m.APIKeyRef,
-		BaseURL:   m.BaseURL,
-		IsActive:  m.IsActive,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
 		Models:    make([]*airuntime.Model, len(m.Models)),
 	}
 
 	for i, model := range m.Models {
 		provider.Models[i] = &airuntime.Model{
-			ID:        model.ID,
-			Name:      model.Name,
+			ID:         model.ID,
+			Name:       model.Name,
 			ProviderID: model.ProviderID,
-			ModelType: model.ModelType,
-			Meta:      map[string]interface{}(model.Meta),
-			IsActive:  model.IsActive,
+			ModelType:  model.ModelType,
+			Meta:       map[string]interface{}(model.Meta),
 		}
 	}
 
@@ -147,9 +135,7 @@ func (r *ModelRepo) Save(model *airuntime.Model) error {
 		ProviderID: model.ProviderID,
 		ModelType:  model.ModelType,
 		Meta:       models.JSONMap(model.Meta),
-		IsActive:   model.IsActive,
-		CreatedAt:  model.CreatedAt,
-		UpdatedAt:  model.UpdatedAt,
+		IsActive:   true,
 	}
 
 	result := r.db.Save(dbModel)
@@ -184,14 +170,9 @@ func (r *ModelRepo) FindByProviderID(providerID string) ([]*airuntime.Model, err
 
 func (r *ModelRepo) Update(model *airuntime.Model) error {
 	dbModel := &models.Model{
-		ID:         model.ID,
-		Name:       model.Name,
-		ProviderID: model.ProviderID,
-		ModelType:  model.ModelType,
-		Meta:       models.JSONMap(model.Meta),
-		IsActive:   model.IsActive,
-		CreatedAt:  model.CreatedAt,
-		UpdatedAt:  model.UpdatedAt,
+		Name:      model.Name,
+		ModelType: model.ModelType,
+		Meta:      models.JSONMap(model.Meta),
 	}
 
 	result := r.db.Model(&models.Model{}).Where("id = ?", model.ID).Updates(dbModel)
@@ -208,9 +189,6 @@ func (r *ModelRepo) modelToDomain(m *models.Model) *airuntime.Model {
 		ProviderID: m.ProviderID,
 		ModelType:  m.ModelType,
 		Meta:       map[string]interface{}(m.Meta),
-		IsActive:   m.IsActive,
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
 	}
 }
 
