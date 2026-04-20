@@ -13,22 +13,21 @@ import (
 
 type ClonePoolService struct {
 	instanceRepo clonepool.CloneInstanceRepo
-	repoRepo     clonepool.RepositoryRepo
-	eventBus     event.EventBus
-	gitClient    git.GitClient
-	baseDir      string
+
+	eventBus  event.EventBus
+	gitClient git.GitClient
+	baseDir   string
 }
 
 func NewClonePoolService(
 	instanceRepo clonepool.CloneInstanceRepo,
-	repoRepo clonepool.RepositoryRepo,
+
 	eventBus event.EventBus,
 	gitClient git.GitClient,
 	baseDir string,
 ) *ClonePoolService {
 	return &ClonePoolService{
 		instanceRepo: instanceRepo,
-		repoRepo:     repoRepo,
 		eventBus:     eventBus,
 		gitClient:    gitClient,
 		baseDir:      baseDir,

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"embed"
 	"fmt"
-	"io/fs"
 	"log"
 	"net/http"
 
@@ -57,7 +55,7 @@ func main() {
 
 	gitClient := git.NewShellGitClient("/tmp/nbcoder/clones")
 	clonePoolService := clonepoolApp.NewClonePoolService(
-		repos.CloneInstance, repos.Repository, eventBus, gitClient, "/tmp/nbcoder/clones",
+		repos.CloneInstance, eventBus, gitClient, "/tmp/nbcoder/clones",
 	)
 
 	providerRegistry := airuntime.NewProviderRegistry()

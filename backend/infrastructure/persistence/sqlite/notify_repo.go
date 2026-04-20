@@ -18,18 +18,28 @@ func NewNotificationRepo(db *gorm.DB) notify.NotificationRepo {
 }
 
 func (r *NotificationRepo) Save(notification *notify.Notification) error {
+	var readAt *time.Time
+	if notification.SentAt != nil {
+		readAt = notification.SentAt
+	}
+
+	status := "UNREAD"
+	if notification.Read {
+		status = "READ"
+	}
+
 	model := &models.Notification{
 		ID:         notification.ID,
 		Title:      notification.Title,
-		Message:    notification.Message,
+		Message:    notification.Content,
 		EventType:  notification.EventType,
 		Recipient:  notification.Recipient,
 		Channel:    string(notification.Channel),
-		Status:     string(notification.Status),
-		Priority:   string(notification.Priority),
-		ReadAt:     notification.ReadAt,
+		Status:     status,
+		Priority:   "NORMAL",
+		ReadAt:     readAt,
 		CreatedAt:  notification.CreatedAt,
-		UpdatedAt:  notification.UpdatedAt,
+		UpdatedAt:  time.Now(),
 	}
 
 	result := r.db.Save(model)
@@ -83,18 +93,24 @@ func (r *NotificationRepo) FindByRecipientAndChannel(recipient string, channel n
 }
 
 func (r *NotificationRepo) Update(notification *notify.Notification) error {
+	var readAt *time.Time
+	if notification.SentAt != nil {
+		readAt = notification.SentAt
+	}
+
+	status := "UNREAD"
+	if notification.Read {
+		status = "READ"
+	}
+
 	model := &models.Notification{
-		ID:         notification.ID,
 		Title:      notification.Title,
-		Message:    notification.Message,
+		Message:    notification.Content,
 		EventType:  notification.EventType,
 		Recipient:  notification.Recipient,
 		Channel:    string(notification.Channel),
-		Status:     string(notification.Status),
-		Priority:   string(notification.Priority),
-		ReadAt:     notification.ReadAt,
-		CreatedAt:  notification.CreatedAt,
-		UpdatedAt:  notification.UpdatedAt,
+		Status:     status,
+		ReadAt:     readAt,
 	}
 
 	result := r.db.Model(&models.Notification{}).Where("id = ?", notification.ID).Updates(model)
@@ -114,18 +130,22 @@ func (r *NotificationRepo) MarkRead(id string) error {
 }
 
 func (r *NotificationRepo) modelToDomain(m *models.Notification) *notify.Notification {
+	var sentAt *time.Time
+	if m.ReadAt != nil {
+		sentAt = m.ReadAt
+	}
+
 	return &notify.Notification{
-		ID:         m.ID,
-		Title:      m.Title,
-		Message:    m.Message,
-		EventType:  m.EventType,
-		Recipient:  m.Recipient,
-		Channel:    notify.ChannelType(m.Channel),
-		Status:     notify.NotificationStatus(m.Status),
-		Priority:   notify.NotificationPriority(m.Priority),
-		ReadAt:     m.ReadAt,
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
+		ID:        m.ID,
+		Title:     m.Title,
+		Content:   m.Message,
+		EventType: m.EventType,
+		Channel:   notify.ChannelType(m.Channel),
+		Recipient: m.Recipient,
+		Status:    notify.NotificationStatus(m.Status),
+		Read:      m.Status == "READ",
+		CreatedAt: m.CreatedAt,
+		SentAt:    sentAt,
 	}
 }
 
@@ -151,9 +171,9 @@ func (r *SubscriptionRepo) Save(sub *notify.Subscription) error {
 		Recipient:  sub.Recipient,
 		EventType:  sub.EventType,
 		Channel:    string(sub.Channel),
-		IsActive:   sub.IsActive,
+		IsActive:   !sub.Muted,
 		CreatedAt:  sub.CreatedAt,
-		UpdatedAt:  sub.UpdatedAt,
+		UpdatedAt:  time.Now(),
 	}
 
 	result := r.db.Save(model)
@@ -195,13 +215,11 @@ func (r *SubscriptionRepo) FindByRecipientAndEventType(recipient, eventType stri
 
 func (r *SubscriptionRepo) Update(sub *notify.Subscription) error {
 	model := &models.Subscription{
-		ID:         sub.ID,
-		Recipient:  sub.Recipient,
-		EventType:  sub.EventType,
+		Recipient: sub.Recipient,
+		EventType: sub.EventType,
 		Channel:    string(sub.Channel),
-		IsActive:   sub.IsActive,
-		CreatedAt:  sub.CreatedAt,
-		UpdatedAt:  sub.UpdatedAt,
+		IsActive:  !sub.Muted,
+		UpdatedAt:  time.Now(),
 	}
 
 	result := r.db.Model(&models.Subscription{}).Where("id = ?", sub.ID).Updates(model)
@@ -225,9 +243,8 @@ func (r *SubscriptionRepo) modelToDomain(m *models.Subscription) *notify.Subscri
 		Recipient: m.Recipient,
 		EventType: m.EventType,
 		Channel:   notify.ChannelType(m.Channel),
-		IsActive:  m.IsActive,
+		Muted:     !m.IsActive,
 		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
 	}
 }
 

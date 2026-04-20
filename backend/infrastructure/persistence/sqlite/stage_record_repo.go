@@ -19,15 +19,15 @@ func NewStageRecordRepo(db *gorm.DB) pipeline.StageRecordRepo {
 func (r *StageRecordRepo) Save(record *pipeline.StageRecord) error {
 	model := &models.StageRecord{
 		ID:         record.ID,
-		PipelineID: record.PipelineID,
-		StageName:  record.StageName,
+		PipelineID: "",
+		StageName:  "",
 		Status:     string(record.Status),
 		StartedAt:  record.StartedAt,
-		CompletedAt: record.CompletedAt,
+		CompletedAt: record.EndedAt,
 		Output:     record.Output,
-		Error:      record.Error,
-		CreatedAt:  record.CreatedAt,
-		UpdatedAt:  record.UpdatedAt,
+		Error:      "",
+		CreatedAt:  record.StartedAt,
+		UpdatedAt:  time.Now(),
 	}
 
 	result := r.db.Save(model)

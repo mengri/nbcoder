@@ -94,14 +94,14 @@ func (r *PipelineRepo) modelToDomain(m *models.Pipeline) *pipeline.Pipeline {
 		domainPipeline.Records = make([]*pipeline.StageRecord, len(m.StageRecords))
 		for i, r := range m.StageRecords {
 			domainPipeline.Records[i] = &pipeline.StageRecord{
-				ID:          r.ID,
-				PipelineID:  r.PipelineID,
-				StageName:   r.StageName,
-				Status:      pipeline.StageStatus(r.Status),
-				StartedAt:   r.StartedAt,
-				CompletedAt: r.CompletedAt,
-				Output:      r.Output,
-				Error:       r.Error,
+				ID:           r.ID,
+				StageID:      r.StageID,
+				Status:       pipeline.StageStatus(r.Status),
+				StartedAt:    r.StartedAt,
+				EndedAt:      r.EndedAt,
+				Output:       r.Output,
+				ReviewResult: "",
+				Reviewer:     "",
 			}
 		}
 	}

@@ -8,8 +8,4 @@ type CloneInstanceRepo interface {
 	Update(instance *CloneInstance) error
 }
 
-type RepositoryRepo interface {
-	Save(repo *Repository) error
-	FindByID(id string) (*Repository, error)
-	FindAll() ([]*Repository, error)
-}
+ 

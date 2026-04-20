@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mengri/nbcoder/domain/notify"
 	"github.com/mengri/nbcoder/infrastructure/database/models"
@@ -115,16 +116,16 @@ func NewNotificationTemplateRepo(db *gorm.DB) notify.NotificationTemplateRepo {
 
 func (r *NotificationTemplateRepo) Save(template *notify.NotificationTemplate) error {
 	model := &models.NotificationTemplate{
-		ID:         template.ID,
-		Name:       template.Name,
-		EventType:  template.EventType,
-		Subject:    template.SubjectTemplate,
-		Body:       template.BodyTemplate,
-		Channel:    "",
-		Variables:  "",
-		IsActive:   true,
-		CreatedAt:  template.CreatedAt,
-		UpdatedAt:  template.UpdatedAt,
+		ID:        template.ID,
+		Name:      template.Name,
+		EventType: template.EventType,
+		Subject:   template.SubjectTemplate,
+		Body:      template.BodyTemplate,
+		Channel:   "",
+		Variables: "",
+		IsActive:  true,
+		CreatedAt: template.CreatedAt,
+		UpdatedAt: template.UpdatedAt,
 	}
 
 	result := r.db.Save(model)
@@ -159,10 +160,10 @@ func (r *NotificationTemplateRepo) FindByEventType(eventType string) ([]*notify.
 
 func (r *NotificationTemplateRepo) Update(template *notify.NotificationTemplate) error {
 	model := &models.NotificationTemplate{
-		Name:       template.Name,
-		EventType:  template.EventType,
-		Subject:    template.SubjectTemplate,
-		Body:       template.BodyTemplate,
+		Name:      template.Name,
+		EventType: template.EventType,
+		Subject:   template.SubjectTemplate,
+		Body:      template.BodyTemplate,
 	}
 
 	result := r.db.Model(&models.NotificationTemplate{}).Where("id = ?", template.ID).Updates(model)
@@ -228,7 +229,7 @@ func (r *NotificationHistoryRepo) Save(history *notify.NotificationHistory) erro
 		Channel:        string(history.Channel),
 		Recipient:      history.Recipient,
 		Status:         string(history.Status),
-		SentAt:         *history.SentAt,
+		SentAt:         &history.SentAt,
 		Error:          history.Error,
 	}
 
@@ -276,7 +277,7 @@ func (r *NotificationHistoryRepo) modelToDomain(m *models.NotificationHistory) *
 		Channel:        notify.ChannelType(m.Channel),
 		Recipient:      m.Recipient,
 		Status:         notify.HistoryStatus(m.Status),
-		SentAt:         &m.SentAt,
+		SentAt:         *m.SentAt,
 		Error:          m.Error,
 	}
 }
