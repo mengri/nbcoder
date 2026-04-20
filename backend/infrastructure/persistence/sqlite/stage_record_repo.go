@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mengri/nbcoder/domain/pipeline"
 	"github.com/mengri/nbcoder/infrastructure/database/models"
@@ -16,18 +17,35 @@ func NewStageRecordRepo(db *gorm.DB) pipeline.StageRecordRepo {
 	return &StageRecordRepo{db: db}
 }
 
+// FindByTimeRange implements [pipeline.StageRecordRepo].
+func (r *StageRecordRepo) FindByTimeRange(start time.Time, end time.Time) ([]*pipeline.StageRecord, error) {
+	panic("unimplemented")
+}
 func (r *StageRecordRepo) Save(record *pipeline.StageRecord) error {
+	var startedAt *time.Time
+	if !record.StartedAt.IsZero() {
+		startedAt = &record.StartedAt
+	}
+
+	var completedAt *time.Time
+	if !record.EndedAt.IsZero() {
+		completedAt = &record.EndedAt
+	}
+
+	createdAt := time.Now()
+	if !record.StartedAt.IsZero() {
+		createdAt = record.StartedAt
+	}
+
 	model := &models.StageRecord{
-		ID:         record.ID,
-		PipelineID: "",
-		StageName:  "",
-		Status:     string(record.Status),
-		StartedAt:  record.StartedAt,
-		CompletedAt: record.EndedAt,
-		Output:     record.Output,
-		Error:      "",
-		CreatedAt:  record.StartedAt,
-		UpdatedAt:  time.Now(),
+		ID:          record.ID,
+		StageName:   record.StageID,
+		Status:      string(record.Status),
+		StartedAt:   startedAt,
+		CompletedAt: completedAt,
+		Output:      record.Output,
+		CreatedAt:   createdAt,
+		UpdatedAt:   time.Now(),
 	}
 
 	result := r.db.Save(model)
@@ -61,17 +79,22 @@ func (r *StageRecordRepo) FindAll() ([]*pipeline.StageRecord, error) {
 }
 
 func (r *StageRecordRepo) Update(record *pipeline.StageRecord) error {
+	var startedAt *time.Time
+	if !record.StartedAt.IsZero() {
+		startedAt = &record.StartedAt
+	}
+
+	var completedAt *time.Time
+	if !record.EndedAt.IsZero() {
+		completedAt = &record.EndedAt
+	}
+
 	model := &models.StageRecord{
-		ID:         record.ID,
-		PipelineID: record.PipelineID,
-		StageName:  record.StageName,
-		Status:     string(record.Status),
-		StartedAt:  record.StartedAt,
-		CompletedAt: record.CompletedAt,
-		Output:     record.Output,
-		Error:      record.Error,
-		CreatedAt:  record.CreatedAt,
-		UpdatedAt:  record.UpdatedAt,
+		Status:      string(record.Status),
+		StartedAt:   startedAt,
+		CompletedAt: completedAt,
+		Output:      record.Output,
+		UpdatedAt:   time.Now(),
 	}
 
 	result := r.db.Model(&models.StageRecord{}).Where("id = ?", record.ID).Updates(model)
@@ -87,6 +110,10 @@ func (r *StageRecordRepo) Delete(id string) error {
 		return fmt.Errorf("failed to delete stage record: %w", result.Error)
 	}
 	return nil
+}
+
+func (r *StageRecordRepo) FindByStageID(stageID string) ([]*pipeline.StageRecord, error) {
+	return []*pipeline.StageRecord{}, nil
 }
 
 func (r *StageRecordRepo) FindByPipelineID(pipelineID string) ([]*pipeline.StageRecord, error) {
@@ -123,15 +150,23 @@ func (r *StageRecordRepo) FindByStatus(status string) ([]*pipeline.StageRecord, 
 }
 
 func (r *StageRecordRepo) modelToDomain(m *models.StageRecord) *pipeline.StageRecord {
+	var startedAt time.Time
+	if m.StartedAt != nil {
+		startedAt = *m.StartedAt
+	}
+
+	var endedAt time.Time
+	if m.CompletedAt != nil {
+		endedAt = *m.CompletedAt
+	}
+
 	return &pipeline.StageRecord{
-		ID:         m.ID,
-		PipelineID: m.PipelineID,
-		StageName:  m.StageName,
-		Status:     pipeline.StageStatus(m.Status),
-		StartedAt:  m.StartedAt,
-		CompletedAt: m.CompletedAt,
-		Output:     m.Output,
-		Error:      m.Error,
+		ID:        m.ID,
+		StageID:   m.StageName,
+		Status:    pipeline.StageStatus(m.Status),
+		StartedAt: startedAt,
+		EndedAt:   endedAt,
+		Output:    m.Output,
 	}
 }
 
