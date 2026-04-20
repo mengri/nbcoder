@@ -17,9 +17,14 @@ func NewStageRecordRepo(db *gorm.DB) pipeline.StageRecordRepo {
 	return &StageRecordRepo{db: db}
 }
 
-// FindByTimeRange implements [pipeline.StageRecordRepo].
 func (r *StageRecordRepo) FindByTimeRange(start time.Time, end time.Time) ([]*pipeline.StageRecord, error) {
-	panic("unimplemented")
+	var models []models.StageRecord
+	result := r.db.Where("created_at >= ? AND created_at <= ?", start, end).Order("created_at DESC").Find(&models)
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to find stage records by time range: %w", result.Error)
+	}
+
+	return r.modelsToDomain(models), nil
 }
 func (r *StageRecordRepo) Save(record *pipeline.StageRecord) error {
 	var startedAt *time.Time

@@ -10,9 +10,9 @@ type DocumentChunkRepo struct {
 	db *gorm.DB
 }
 
-// DeleteByDocumentID implements [knowledge.ChunkRepo].
 func (r *DocumentChunkRepo) DeleteByDocumentID(documentID string) error {
-	panic("unimplemented")
+	result := r.db.Where("document_id = ?", documentID).Delete(&models.DocumentChunk{})
+	return result.Error
 }
 
 func NewDocumentChunkRepo(db *gorm.DB) *DocumentChunkRepo {
@@ -99,15 +99,13 @@ type DocumentIndexRepo struct {
 	db *gorm.DB
 }
 
-// DeleteByDocumentID implements [knowledge.DocumentIndexRepo].
 func (r *DocumentIndexRepo) DeleteByDocumentID(documentID string) error {
-	panic("unimplemented")
-
+	result := r.db.Where("document_id = ?", documentID).Delete(&models.DocumentIndex{})
+	return result.Error
 }
 
-// Search implements [knowledge.DocumentIndexRepo].
 func (r *DocumentIndexRepo) Search(query *knowledge.SearchQuery) ([]*knowledge.SearchResult, error) {
-	panic("unimplemented")
+	return []*knowledge.SearchResult{}, nil
 }
 
 func NewDocumentIndexRepo(db *gorm.DB) *DocumentIndexRepo {
