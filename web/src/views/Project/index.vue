@@ -134,14 +134,15 @@ const dialogVisible = ref(false)
 const editingProject = ref<Project | null>(null)
 
 const filteredProjects = computed(() => {
+  const projects = projectStore.projects.value || []
   if (!searchKeyword.value) {
-    return projectStore.projects
+    return projects
   }
   const keyword = searchKeyword.value.toLowerCase()
-  return projectStore.projects.filter(
+  return projects.filter(
     p =>
       p.name.toLowerCase().includes(keyword) ||
-      p.description.toLowerCase().includes(keyword)
+      p.description?.toLowerCase().includes(keyword)
   )
 })
 

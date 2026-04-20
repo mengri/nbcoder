@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	agentApp "github.com/mengri/nbcoder/application/agent"
@@ -83,7 +82,11 @@ func main() {
 	notifyService := notifyApp.NewNotifyService(repos.Notification, repos.Subscription, repos.SubscriptionPreference, nil, dispatcher, eventBus)
 
 	gitService := gitApp.NewGitService(repos.PullRequest)
-
+	frontendFS, err := embeddedWeb.DistFS()
+	if err != nil {
+		log.Fatalf("failed to load embedded frontend", "error", err)
+		return
+	}
 	router := gin.Default()
 	apiGroup := router.Group("/api/v1")
 
@@ -96,14 +99,7 @@ func main() {
 	api.NewKnowledgeHandler(knowledgeService).RegisterRoutes(apiGroup)
 	api.NewNotifyHandler(notifyService).RegisterRoutes(apiGroup)
 	api.NewGitHandler(gitService).RegisterRoutes(apiGroup)
-
-	embedFS := embeddedWeb.WebFS()
-	fileServer := http.FileServer(http.FS(embedFS))
-	router.NoRoute(func(c *gin.Context) {
-		if c.Request.Method == "GET" && c.Request.URL.Path != "/api/" {
-			fileServer.ServeHTTP(c.Writer, c.Request)
-		}
-	})
+	router.NoRoute(frontendFS)
 	log.Println("Embedded web assets loaded")
 
 	log.Println("Starting NBCoder server on :8080")
