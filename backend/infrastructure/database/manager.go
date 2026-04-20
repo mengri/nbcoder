@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -28,6 +30,11 @@ type DatabaseManager struct {
 func NewDatabaseManager(config *DatabaseConfig) (*DatabaseManager, error) {
 	if config == nil {
 		config = DefaultDatabaseConfig()
+	}
+
+	dbDir := filepath.Dir(config.DSN)
+	if err := os.MkdirAll(dbDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create database directory: %w", err)
 	}
 
 	db, err := gorm.Open(sqlite.Open(config.DSN), &gorm.Config{
