@@ -14,7 +14,11 @@ export const useProjectStore = defineStore('project', () => {
       const data = await request.get<Project[]>('/projects', {
         params: { page: 1, size: 100 }
       })
+      console.log('API response data:', data)
+      console.log('Data type:', typeof data, 'Is array:', Array.isArray(data))
       projects.value = data || []
+      console.log('After assignment, projects.value:', projects.value)
+      console.log('After assignment, projects:', projects)
     } catch (error) {
       console.error('Failed to load projects:', error)
       projects.value = []

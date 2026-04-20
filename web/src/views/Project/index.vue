@@ -134,7 +134,9 @@ const dialogVisible = ref(false)
 const editingProject = ref<Project | null>(null)
 
 const filteredProjects = computed(() => {
-  const projects = projectStore.projects.value || []
+  const projects = projectStore.projects || []
+  console.log('Computing filteredProjects, projects:', projects)
+  console.log('Projects type:', typeof projects, 'Is array:', Array.isArray(projects))
   if (!searchKeyword.value) {
     return projects
   }
@@ -150,7 +152,12 @@ const loadProjects = async () => {
   loading.value = true
   try {
     await projectStore.loadProjects()
+    console.log('✅ Load completed')
+    console.log('Store projects:', projectStore.projects)
+    console.log('Projects length:', projectStore.projects?.length)
+    console.log('Filtered projects:', filteredProjects.value)
   } catch (error) {
+    console.error('❌ Failed to load projects:', error)
     ElMessage.error('加载项目列表失败')
   } finally {
     loading.value = false

@@ -35,45 +35,47 @@
 
       <el-form-item
         label="Git 仓库"
-        prop="gitRepoUrl"
+        prop="repoUrl"
       >
         <el-input
-          v-model="form.gitRepoUrl"
+          v-model="form.repoUrl"
           placeholder="请输入 Git 仓库 URL（可选）"
         />
       </el-form-item>
 
       <el-form-item
-        label="分支"
-        prop="gitBranch"
-      >
-        <el-input
-          v-model="form.gitBranch"
-          placeholder="请输入分支名称（可选）"
-        />
-      </el-form-item>
-
-      <el-form-item
-        label="开发规范"
-        prop="standards"
-      >
-        <el-input
-          v-model="form.standards"
-          type="textarea"
-          :rows="2"
-          placeholder="请输入开发规范（可选）"
-        />
-      </el-form-item>
-
-      <el-form-item
         label="分支策略"
-        prop="branchPolicy"
+        prop="branchStrategy"
       >
         <el-input
-          v-model="form.branchPolicy"
+          v-model="form.branchStrategy"
           type="textarea"
           :rows="2"
           placeholder="请输入分支策略（可选）"
+        />
+      </el-form-item>
+
+      <el-form-item
+        label="技术栈"
+        prop="techStack"
+      >
+        <el-input
+          v-model="form.techStack"
+          type="textarea"
+          :rows="2"
+          placeholder="请输入技术栈（可选）"
+        />
+      </el-form-item>
+
+      <el-form-item
+        label="编码规范"
+        prop="codingConventions"
+      >
+        <el-input
+          v-model="form.codingConventions"
+          type="textarea"
+          :rows="2"
+          placeholder="请输入编码规范（可选）"
         />
       </el-form-item>
     </el-form>
@@ -121,10 +123,10 @@ const isEdit = computed(() => !!props.project)
 const form = ref<CreateProjectDto>({
   name: '',
   description: '',
-  gitRepoUrl: '',
-  gitBranch: '',
-  standards: '',
-  branchPolicy: ''
+  repoUrl: '',
+  branchStrategy: '',
+  techStack: '',
+  codingConventions: ''
 })
 
 const rules: FormRules = {
@@ -145,19 +147,19 @@ watch(
       form.value = {
         name: newProject.name,
         description: newProject.description,
-        gitRepoUrl: newProject.gitRepoUrl || '',
-        gitBranch: newProject.gitBranch || '',
-        standards: newProject.standards || '',
-        branchPolicy: newProject.branchPolicy || ''
+        repoUrl: newProject.repoUrl || '',
+        branchStrategy: '',
+        techStack: '',
+        codingConventions: ''
       }
     } else {
       form.value = {
         name: '',
         description: '',
-        gitRepoUrl: '',
-        gitBranch: '',
-        standards: '',
-        branchPolicy: ''
+        repoUrl: '',
+        branchStrategy: '',
+        techStack: '',
+        codingConventions: ''
       }
     }
   },

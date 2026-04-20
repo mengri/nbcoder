@@ -10,19 +10,16 @@ export interface Project extends BaseEntity {
   name: string
   description: string
   status: ProjectStatus
-  gitRepoUrl?: string
-  gitBranch?: string
-  standards?: string
-  branchPolicy?: string
+  repoUrl?: string
 }
 
 export interface CreateProjectDto {
   name: string
   description: string
-  gitRepoUrl?: string
-  gitBranch?: string
-  standards?: string
-  branchPolicy?: string
+  repoUrl?: string
+  branchStrategy?: string
+  techStack?: string
+  codingConventions?: string
 }
 
 export interface UpdateProjectDto extends Partial<CreateProjectDto> {
