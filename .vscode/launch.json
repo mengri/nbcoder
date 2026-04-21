@@ -16,7 +16,8 @@
                     "from": "${workspaceFolder}", // 编译路径 (容器内)
                     "to": "/mnt/c/work/mengri/nbcoder" // 实际本地路径
                 }
-            ]
+            ],
+            "output": "${workspaceFolder}/work/"
         },
     ]
 }
