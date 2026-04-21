@@ -50,6 +50,259 @@ nbcoder/
 - 禁止在同一分支并行开发多个任务，确保每个 feature 分支只对应一个任务。
 - 任务开发顺序、依赖关系需在 agents.md 或任务描述中明确。
 
+## 前后端接口规范
+
+### 统一响应格式
+
+所有接口响应必须使用统一的格式：
+
+```typescript
+{
+  code: number,      // 状态码：200 成功，400 请求错误，401 未授权，403 无权限，404 未找到，500 服务器错误
+  message: string,   // 消息描述
+  data: T | null     // 数据内容
+}
+```
+
+**示例：**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": "xxx",
+    "name": "项目名称"
+  }
+}
+```
+
+**错误响应示例：**
+```json
+{
+  "code": 400,
+  "message": "参数错误：name 字段不能为空",
+  "data": null
+}
+```
+
+### HTTP 状态码使用
+
+- `200 OK`：请求成功
+- `201 Created`：资源创建成功
+- `204 No Content`：删除成功（无返回数据）
+- `400 Bad Request`：请求参数错误
+- `401 Unauthorized`：未认证或 token 失效
+- `403 Forbidden`：无权限访问
+- `404 Not Found`：资源不存在
+- `409 Conflict`：资源冲突（如重复创建）
+- `500 Internal Server Error`：服务器内部错误
+
+### 字段命名规范
+
+- **统一使用 camelCase**（驼峰命名法）
+- 示例：`projectId`, `createdAt`, `updatedAt`, `userId`
+- **重要**：后端 DTO 中的 JSON 标签也必须使用 camelCase，例如：
+  ```go
+  type ProjectResponse struct {
+      ID          string `json:"id"`
+      Name        string `json:"name"`
+      Description string `json:"description"`
+      ProjectID   string `json:"projectId"`   // 正确
+      CreatedAt   string `json:"createdAt"`    // 正确
+      // 不要使用 project_id, created_at 等下划线命名
+  }
+  ```
+
+**时间字段：**
+- `createdAt`：创建时间，ISO 8601 格式（如 `2024-01-01T00:00:00Z`）
+- `updatedAt`：更新时间，ISO 8601 格式
+
+### 路由规范
+
+#### RESTful 风格
+
+使用资源导向的 URL 设计，遵循 RESTful 规范：
+
+```
+GET    /api/v1/resources           # 获取资源列表
+POST   /api/v1/resources           # 创建资源
+GET    /api/v1/resources/:id       # 获取单个资源
+PUT    /api/v1/resources/:id       # 更新资源
+DELETE /api/v1/resources/:id       # 删除资源
+```
+
+#### 项目级路由
+
+需要关联项目的资源使用 `/projects/:projectId/` 前缀：
+
+```
+GET    /api/v1/projects/:projectId/cards         # 获取项目的卡片列表
+POST   /api/v1/projects/:projectId/cards         # 创建卡片
+GET    /api/v1/projects/:projectId/cards/:id     # 获取单个卡片
+PUT    /api/v1/projects/:projectId/cards/:id     # 更新卡片
+DELETE /api/v1/projects/:projectId/cards/:id     # 删除卡片
+```
+
+#### 操作类路由
+
+对资源的操作使用子路由：
+
+```
+POST   /api/v1/projects/:projectId/pipelines/:id/start     # 启动流水线
+POST   /api/v1/projects/:projectId/pipelines/:id/pause     # 暂停流水线
+POST   /api/v1/projects/:projectId/pipelines/:id/resume    # 恢复流水线
+POST   /api/v1/projects/:projectId/pipelines/:id/cancel    # 取消流水线
+```
+
+### 分页规范
+
+#### 请求参数
+
+```typescript
+{
+  page: number,      // 页码，从 1 开始
+  size: number,      // 每页数量，默认 20
+  keyword?: string   // 搜索关键词（可选）
+}
+```
+
+#### 响应格式
+
+```typescript
+{
+  code: 200,
+  message: "success",
+  data: {
+    items: T[],      // 数据列表
+    total: number,   // 总数量
+    page: number,    // 当前页码
+    size: number,    // 每页数量
+    totalPages: number // 总页数
+  }
+}
+```
+
+### 请求方法使用
+
+- `GET`：查询数据，不修改服务器状态
+- `POST`：创建资源
+- `PUT`：完整更新资源（全量更新）
+- `PATCH`：部分更新资源（仅更新提供的字段）
+- `DELETE`：删除资源
+
+### ID 格式
+
+所有 ID 使用字符串类型（UUID 格式）：
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### 枚举值
+
+枚举值使用大写字符串：
+
+```json
+{
+  "status": "ACTIVE",
+  "type": "PIPELINE"
+}
+```
+
+### 文件上传/下载
+
+#### 文件上传
+
+使用 `multipart/form-data` 格式：
+
+```typescript
+const formData = new FormData()
+formData.append('file', file)
+formData.append('projectId', projectId)
+
+POST /api/v1/projects/:projectId/documents/upload
+Content-Type: multipart/form-data
+```
+
+#### 文件下载
+
+设置响应类型为 `blob`：
+
+```typescript
+GET /api/v1/projects/:projectId/documents/:id/download
+Response-Type: blob
+```
+
+### 认证与授权
+
+- 使用 Bearer Token 认证
+- Token 在请求头中携带：`Authorization: Bearer <token>`
+- Token 存储在 `localStorage` 中，key 为 `token`
+
+### 错误处理
+
+#### 前端错误处理
+
+```typescript
+request.interceptors.response.use(
+  (response) => {
+    const { code, message, data } = response.data
+    if (code !== 200) {
+      ElMessage.error(message)
+      return Promise.reject(new Error(message))
+    }
+    return data
+  },
+  (error) => {
+    const message = error.response?.data?.message || error.message || '请求失败'
+    ElMessage.error(message)
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+    }
+
+    return Promise.reject(error)
+  }
+)
+```
+
+#### 后端错误处理
+
+```go
+// 统一错误响应
+c.JSON(http.StatusBadRequest, gin.H{
+    "code": 400,
+    "message": "参数错误：name 字段不能为空",
+    "data": nil,
+})
+
+// 业务错误
+c.JSON(http.StatusInternalServerError, gin.H{
+    "code": 500,
+    "message": "创建项目失败：" + err.Error(),
+    "data": nil,
+})
+```
+
+### 接口版本管理
+
+当前版本：`/api/v1`
+
+新接口必须包含版本号，如需升级，创建新版本路径：
+- `/api/v2/...`
+
+### 接口文档
+
+使用 OpenAPI/Swagger 规范编写接口文档，文档应包含：
+- 接口路径和方法
+- 请求参数（path、query、body）
+- 响应格式和示例
+- 错误码说明
+- 认证要求
+
 ## 其他说明
 
 - 可根据实际业务扩展目录结构，如增加 docs、scripts、tests 等。

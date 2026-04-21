@@ -1,11 +1,10 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	knowledgeApp "github.com/mengri/nbcoder/application/knowledge"
 	"github.com/mengri/nbcoder/domain/knowledge"
+	"github.com/mengri/nbcoder/pkg/response"
 )
 
 type KnowledgeHandler struct {
@@ -40,20 +39,20 @@ func (h *KnowledgeHandler) UploadDocument(c *gin.Context) {
 	var req struct {
 		Name        string `json:"name" binding:"required"`
 		Path        string `json:"path"`
-		ProjectID   string `json:"project_id" binding:"required"`
-		DirectoryID string `json:"directory_id"`
+		ProjectName string `json:"projectName" binding:"required"`
+		DirectoryID string `json:"directoryId"`
 		Content     string `json:"content"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	doc, err := h.knowledgeService.UploadDocument(req.Name, req.Path, req.ProjectID, req.DirectoryID, req.Content)
+	doc, err := h.knowledgeService.UploadDocument(req.Name, req.Path, req.ProjectName, req.DirectoryID, req.Content)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "上传文档失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, toDocumentResponse(doc))
+	response.Created(c, toDocumentResponse(doc))
 }
 
 func (h *KnowledgeHandler) BatchUploadDocuments(c *gin.Context) {
@@ -61,165 +60,169 @@ func (h *KnowledgeHandler) BatchUploadDocuments(c *gin.Context) {
 		Documents []struct {
 			Name        string `json:"name" binding:"required"`
 			Path        string `json:"path"`
-			ProjectID   string `json:"project_id" binding:"required"`
-			DirectoryID string `json:"directory_id"`
+			ProjectName string `json:"projectName" binding:"required"`
+			DirectoryID string `json:"directoryId"`
 			Content     string `json:"content"`
 		} `json:"documents" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	docs := make([]struct{ Name, Path, ProjectID, DirectoryID, Content string }, len(req.Documents))
+	docs := make([]struct{ Name, Path, ProjectName, DirectoryID, Content string }, len(req.Documents))
 	for i, d := range req.Documents {
-		docs[i] = struct{ Name, Path, ProjectID, DirectoryID, Content string }{
-			Name: d.Name, Path: d.Path, ProjectID: d.ProjectID, DirectoryID: d.DirectoryID, Content: d.Content,
+		docs[i] = struct{ Name, Path, ProjectName, DirectoryID, Content string }{
+			Name: d.Name, Path: d.Path, ProjectName: d.ProjectName, DirectoryID: d.DirectoryID, Content: d.Content,
 		}
 	}
 	result, err := h.knowledgeService.BatchUploadDocuments(docs)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "批量上传文档失败："+err.Error())
 		return
 	}
 	resp := make([]gin.H, 0, len(result))
 	for _, doc := range result {
 		resp = append(resp, toDocumentResponse(doc))
 	}
-	c.JSON(http.StatusCreated, resp)
+	response.Created(c, resp)
 }
 
 func (h *KnowledgeHandler) GetDocument(c *gin.Context) {
 	id := c.Param("id")
-	doc, err := h.knowledgeService.GetDocument(id)
+	projectName := c.Query("projectName")
+	doc, err := h.knowledgeService.GetDocument(id, projectName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取文档失败："+err.Error())
 		return
 	}
 	if doc == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "document not found"})
+		response.NotFound(c, "文档不存在")
 		return
 	}
-	c.JSON(http.StatusOK, toDocumentResponse(doc))
+	response.Success(c, toDocumentResponse(doc))
 }
 
 func (h *KnowledgeHandler) ListDocuments(c *gin.Context) {
-	projectID := c.Query("project_id")
-	docs, err := h.knowledgeService.ListDocuments(projectID)
+	projectName := c.Query("projectName")
+	docs, err := h.knowledgeService.ListDocuments(projectName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取文档列表失败："+err.Error())
 		return
 	}
 	resp := make([]gin.H, 0, len(docs))
 	for _, doc := range docs {
 		resp = append(resp, toDocumentResponse(doc))
 	}
-	c.JSON(http.StatusOK, resp)
+	response.Success(c, resp)
 }
 
 func (h *KnowledgeHandler) DeleteDocument(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.knowledgeService.DeleteDocument(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	projectName := c.Query("projectName")
+	if err := h.knowledgeService.DeleteDocument(id, projectName); err != nil {
+		response.Error(c, "删除文档失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "document deleted"})
+	response.Success(c, nil)
 }
 
 func (h *KnowledgeHandler) CreateDirectory(c *gin.Context) {
 	var req struct {
-		Name      string `json:"name" binding:"required"`
-		ParentID  string `json:"parent_id"`
-		ProjectID string `json:"project_id" binding:"required"`
+		Name        string `json:"name" binding:"required"`
+		ParentID    string `json:"parentId"`
+		ProjectName string `json:"projectName" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	dir, err := h.knowledgeService.CreateDirectory(req.Name, req.ParentID, req.ProjectID)
+	dir, err := h.knowledgeService.CreateDirectory(req.Name, req.ParentID, req.ProjectName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "创建目录失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, toDirectoryResponse(dir))
+	response.Created(c, toDirectoryResponse(dir))
 }
 
 func (h *KnowledgeHandler) GetDirectory(c *gin.Context) {
 	id := c.Param("id")
-	dir, err := h.knowledgeService.GetDirectory(id)
+	projectName := c.Query("projectName")
+	dir, err := h.knowledgeService.GetDirectory(id, projectName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取目录失败："+err.Error())
 		return
 	}
 	if dir == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "directory not found"})
+		response.NotFound(c, "目录不存在")
 		return
 	}
-	c.JSON(http.StatusOK, toDirectoryResponse(dir))
+	response.Success(c, toDirectoryResponse(dir))
 }
 
 func (h *KnowledgeHandler) ListDirectories(c *gin.Context) {
-	projectID := c.Query("project_id")
-	dirs, err := h.knowledgeService.ListDirectories(projectID)
+	projectName := c.Query("projectName")
+	dirs, err := h.knowledgeService.ListDirectories(projectName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取目录列表失败："+err.Error())
 		return
 	}
 	resp := make([]gin.H, 0, len(dirs))
 	for _, dir := range dirs {
 		resp = append(resp, toDirectoryResponse(dir))
 	}
-	c.JSON(http.StatusOK, resp)
+	response.Success(c, resp)
 }
 
 func (h *KnowledgeHandler) ListDocumentsByDirectory(c *gin.Context) {
 	dirID := c.Param("id")
 	docs, err := h.knowledgeService.ListDocumentsByDirectory(dirID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取目录文档失败："+err.Error())
 		return
 	}
 	resp := make([]gin.H, 0, len(docs))
 	for _, doc := range docs {
 		resp = append(resp, toDocumentResponse(doc))
 	}
-	c.JSON(http.StatusOK, resp)
+	response.Success(c, resp)
 }
 
 func (h *KnowledgeHandler) ListSubDirectories(c *gin.Context) {
 	parentID := c.Param("id")
 	dirs, err := h.knowledgeService.ListSubDirectories(parentID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取子目录失败："+err.Error())
 		return
 	}
 	resp := make([]gin.H, 0, len(dirs))
 	for _, dir := range dirs {
 		resp = append(resp, toDirectoryResponse(dir))
 	}
-	c.JSON(http.StatusOK, resp)
+	response.Success(c, resp)
 }
 
 func (h *KnowledgeHandler) DeleteDirectory(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.knowledgeService.DeleteDirectory(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	projectName := c.Query("projectName")
+	if err := h.knowledgeService.DeleteDirectory(id, projectName); err != nil {
+		response.Error(c, "删除目录失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "directory deleted"})
+	response.Success(c, nil)
 }
 
 func (h *KnowledgeHandler) Search(c *gin.Context) {
 	var query knowledge.SearchQuery
 	if err := c.ShouldBindJSON(&query); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	results, err := h.knowledgeService.Search(&query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "搜索失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, results)
+	response.Success(c, results)
 }
 
 func toDocumentResponse(doc *knowledge.Document) gin.H {
@@ -227,11 +230,11 @@ func toDocumentResponse(doc *knowledge.Document) gin.H {
 		"id":           doc.ID,
 		"name":         doc.Name,
 		"path":         doc.Path,
-		"project_id":   doc.ProjectID,
-		"directory_id": doc.DirectoryID,
+		"projectName":  doc.ProjectName,
+		"directoryId":  doc.DirectoryID,
 		"version":      doc.Version,
-		"created_at":   doc.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		"updated_at":   doc.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		"createdAt":    doc.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		"updatedAt":    doc.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 
@@ -239,10 +242,10 @@ func toDirectoryResponse(dir *knowledge.Directory) gin.H {
 	return gin.H{
 		"id":         dir.ID,
 		"name":       dir.Name,
-		"parent_id":  dir.ParentID,
-		"project_id": dir.ProjectID,
+		"parentId":   dir.ParentID,
+		"projectName":  dir.ProjectName,
 		"path":       dir.Path,
-		"created_at": dir.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		"updated_at": dir.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		"createdAt":  dir.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		"updatedAt":  dir.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }

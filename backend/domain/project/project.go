@@ -2,6 +2,7 @@ package project
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 )
 
@@ -13,7 +14,6 @@ const (
 )
 
 type Project struct {
-	ID          string        `json:"id"`
 	Name        string        `json:"name"`
 	Description string        `json:"description,omitempty"`
 	RepoURL     string        `json:"repo_url,omitempty"`
@@ -22,10 +22,9 @@ type Project struct {
 	UpdatedAt   time.Time     `json:"updated_at"`
 }
 
-func NewProject(id, name, description, repoURL string) *Project {
+func NewProject(name, description, repoURL string) *Project {
 	now := time.Now().UTC()
 	return &Project{
-		ID:          id,
 		Name:        name,
 		Description: description,
 		RepoURL:     repoURL,
@@ -70,5 +69,14 @@ func (p *Project) Validate() error {
 	if p.Name == "" {
 		return fmt.Errorf("project name is required")
 	}
+	
+	matched, err := regexp.MatchString(`^[a-z0-9_]+$`, p.Name)
+	if err != nil {
+		return fmt.Errorf("invalid project name: %w", err)
+	}
+	if !matched {
+		return fmt.Errorf("project name can only contain lowercase letters, numbers, and underscores")
+	}
+	
 	return nil
 }

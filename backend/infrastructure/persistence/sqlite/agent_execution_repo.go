@@ -11,14 +11,23 @@ import (
 )
 
 type AgentExecutionRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewAgentExecutionRepo(db *gorm.DB) agent.AgentExecutionRepo {
-	return &AgentExecutionRepo{db: db}
+func NewAgentExecutionRepo(dbProvider DBProvider) agent.AgentExecutionRepo {
+	return &AgentExecutionRepo{dbProvider: dbProvider}
+}
+
+func (r *AgentExecutionRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *AgentExecutionRepo) Save(execution *agent.AgentExecution) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	inputJSON, _ := json.Marshal(execution.Input)
 	outputJSON, _ := json.Marshal(execution.Output)
 
@@ -39,7 +48,7 @@ func (r *AgentExecutionRepo) Save(execution *agent.AgentExecution) error {
 		ExecCount:   0,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save agent execution: %w", result.Error)
 	}
@@ -47,8 +56,13 @@ func (r *AgentExecutionRepo) Save(execution *agent.AgentExecution) error {
 }
 
 func (r *AgentExecutionRepo) FindByID(id string) (*agent.AgentExecution, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.AgentExecution
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -60,8 +74,13 @@ func (r *AgentExecutionRepo) FindByID(id string) (*agent.AgentExecution, error) 
 }
 
 func (r *AgentExecutionRepo) FindByTaskID(taskID string) ([]*agent.AgentExecution, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.AgentExecution
-	result := r.db.Where("task_id = ?", taskID).Order("created_at DESC").Find(&models)
+	result := db.Where("task_id = ?", taskID).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find agent executions by task id: %w", result.Error)
 	}
@@ -70,8 +89,13 @@ func (r *AgentExecutionRepo) FindByTaskID(taskID string) ([]*agent.AgentExecutio
 }
 
 func (r *AgentExecutionRepo) FindByAgentID(agentID string) ([]*agent.AgentExecution, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.AgentExecution
-	result := r.db.Where("agent_id = ?", agentID).Order("created_at DESC").Find(&models)
+	result := db.Where("agent_id = ?", agentID).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find agent executions by agent id: %w", result.Error)
 	}
@@ -80,8 +104,13 @@ func (r *AgentExecutionRepo) FindByAgentID(agentID string) ([]*agent.AgentExecut
 }
 
 func (r *AgentExecutionRepo) FindAll() ([]*agent.AgentExecution, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.AgentExecution
-	result := r.db.Order("created_at DESC").Find(&models)
+	result := db.Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find all agent executions: %w", result.Error)
 	}
@@ -90,6 +119,11 @@ func (r *AgentExecutionRepo) FindAll() ([]*agent.AgentExecution, error) {
 }
 
 func (r *AgentExecutionRepo) Update(execution *agent.AgentExecution) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	inputJSON, _ := json.Marshal(execution.Input)
 	outputJSON, _ := json.Marshal(execution.Output)
 
@@ -110,7 +144,7 @@ func (r *AgentExecutionRepo) Update(execution *agent.AgentExecution) error {
 		ExecCount:   0,
 	}
 
-	result := r.db.Model(&models.AgentExecution{}).Where("id = ?", execution.ID).Updates(model)
+	result := db.Model(&models.AgentExecution{}).Where("id = ?", execution.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update agent execution: %w", result.Error)
 	}
@@ -118,7 +152,12 @@ func (r *AgentExecutionRepo) Update(execution *agent.AgentExecution) error {
 }
 
 func (r *AgentExecutionRepo) Delete(id string) error {
-	result := r.db.Delete(&models.AgentExecution{}, "id = ?", id)
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.AgentExecution{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete agent execution: %w", result.Error)
 	}
@@ -126,8 +165,13 @@ func (r *AgentExecutionRepo) Delete(id string) error {
 }
 
 func (r *AgentExecutionRepo) FindByStatus(status string) ([]*agent.AgentExecution, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.AgentExecution
-	result := r.db.Where("status = ?", status).Order("created_at DESC").Find(&models)
+	result := db.Where("status = ?", status).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find agent executions by status: %w", result.Error)
 	}
@@ -136,8 +180,13 @@ func (r *AgentExecutionRepo) FindByStatus(status string) ([]*agent.AgentExecutio
 }
 
 func (r *AgentExecutionRepo) FindByTaskIDAndAgentType(taskID string, agentType string) ([]*agent.AgentExecution, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.AgentExecution
-	result := r.db.Where("task_id = ? AND agent_type = ?", taskID, agentType).Order("created_at DESC").Find(&models)
+	result := db.Where("task_id = ? AND agent_type = ?", taskID, agentType).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find agent executions by task id and agent type: %w", result.Error)
 	}

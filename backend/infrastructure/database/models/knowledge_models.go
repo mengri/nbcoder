@@ -10,7 +10,7 @@ type Document struct {
 	ID          string         `gorm:"type:varchar(36);primaryKey" json:"id"`
 	Name        string         `gorm:"type:varchar(255);not null" json:"name"`
 	Path        string         `gorm:"type:varchar(500);not null;index" json:"path"`
-	ProjectID   string         `gorm:"type:varchar(36);not null;index:idx_document_project" json:"project_id"`
+	ProjectName string         `gorm:"type:varchar(255);not null;index:idx_document_project" json:"project_name"`
 	DirectoryID string         `gorm:"type:varchar(36);index" json:"directory_id"`
 	Content     string         `gorm:"type:text" json:"content"`
 	Version     int            `gorm:"not null;default:1" json:"version"`
@@ -18,7 +18,6 @@ type Document struct {
 	UpdatedAt   time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
-	Project   *Project        `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
 	Directory *Directory      `gorm:"foreignKey:DirectoryID" json:"directory,omitempty"`
 	Chunks    []DocumentChunk `gorm:"foreignKey:DocumentID" json:"chunks,omitempty"`
 	Indices   []DocumentIndex `gorm:"foreignKey:DocumentID" json:"indices,omitempty"`
@@ -62,16 +61,15 @@ func (DocumentIndex) TableName() string {
 }
 
 type Directory struct {
-	ID        string         `gorm:"type:varchar(36);primaryKey" json:"id"`
-	Name      string         `gorm:"type:varchar(255);not null" json:"name"`
-	ParentID  string         `gorm:"type:varchar(36);index" json:"parent_id"`
-	ProjectID string         `gorm:"type:varchar(36);not null;index:idx_directory_project" json:"project_id"`
-	Path      string         `gorm:"type:varchar(500);not null;index" json:"path"`
-	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID           string         `gorm:"type:varchar(36);primaryKey" json:"id"`
+	Name         string         `gorm:"type:varchar(255);not null" json:"name"`
+	ParentID     string         `gorm:"type:varchar(36);index" json:"parent_id"`
+	ProjectName  string         `gorm:"type:varchar(255);not null;index:idx_directory_project" json:"project_name"`
+	Path         string         `gorm:"type:varchar(500);not null;index" json:"path"`
+	CreatedAt    time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
-	Project   *Project    `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
 	Parent    *Directory  `gorm:"foreignKey:ParentID" json:"parent,omitempty"`
 	Children  []Directory `gorm:"foreignKey:ParentID" json:"children,omitempty"`
 	Documents []Document  `gorm:"foreignKey:DirectoryID" json:"documents,omitempty"`

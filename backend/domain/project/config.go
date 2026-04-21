@@ -44,39 +44,39 @@ const (
 )
 
 type ConfigItem struct {
-	Scope     ConfigScope `json:"scope"`
-	ProjectID string     `json:"project_id,omitempty"`
-	Key       string     `json:"key"`
-	Value     string     `json:"value"`
+	Scope      ConfigScope `json:"scope"`
+	ProjectName string     `json:"project_name,omitempty"`
+	Key        string     `json:"key"`
+	Value      string     `json:"value"`
 }
 
-func NewConfigItem(scope ConfigScope, projectID, key, value string) *ConfigItem {
+func NewConfigItem(scope ConfigScope, projectName, key, value string) *ConfigItem {
 	return &ConfigItem{
-		Scope:     scope,
-		ProjectID: projectID,
-		Key:       key,
-		Value:     value,
+		Scope:      scope,
+		ProjectName: projectName,
+		Key:        key,
+		Value:      value,
 	}
 }
 
 type ProjectConfig struct {
-	ID        string    `json:"id"`
-	ProjectID string    `json:"project_id"`
-	Key       string    `json:"key"`
-	Value     string    `json:"value"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           string    `json:"id"`
+	ProjectName  string    `json:"project_name"`
+	Key          string    `json:"key"`
+	Value        string    `json:"value"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-func NewProjectConfig(id, projectID, key, value string) *ProjectConfig {
+func NewProjectConfig(id, projectName, key, value string) *ProjectConfig {
 	now := time.Now().UTC()
 	return &ProjectConfig{
-		ID:        id,
-		ProjectID: projectID,
-		Key:       key,
-		Value:     value,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:          id,
+		ProjectName: projectName,
+		Key:         key,
+		Value:       value,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 }
 
@@ -93,30 +93,30 @@ func (c *ProjectConfig) Update(value string) {
 }
 
 type ConfigChangeLog struct {
-	ID        string    `json:"id"`
-	ProjectID string    `json:"project_id"`
-	ConfigKey string    `json:"config_key"`
-	OldValue  string    `json:"old_value"`
-	NewValue  string    `json:"new_value"`
-	ChangedAt time.Time `json:"changed_at"`
-	ChangedBy string    `json:"changed_by"`
+	ID           string    `json:"id"`
+	ProjectName  string    `json:"project_name"`
+	ConfigKey    string    `json:"config_key"`
+	OldValue     string    `json:"old_value"`
+	NewValue     string    `json:"new_value"`
+	ChangedAt    time.Time `json:"changed_at"`
+	ChangedBy    string    `json:"changed_by"`
 }
 
-func NewConfigChangeLog(id, projectID, configKey, oldValue, newValue, changedBy string) *ConfigChangeLog {
+func NewConfigChangeLog(id, projectName, configKey, oldValue, newValue, changedBy string) *ConfigChangeLog {
 	return &ConfigChangeLog{
-		ID:        id,
-		ProjectID: projectID,
-		ConfigKey: configKey,
-		OldValue:  oldValue,
-		NewValue:  newValue,
-		ChangedAt: time.Now().UTC(),
-		ChangedBy: changedBy,
+		ID:          id,
+		ProjectName: projectName,
+		ConfigKey:   configKey,
+		OldValue:    oldValue,
+		NewValue:    newValue,
+		ChangedAt:   time.Now().UTC(),
+		ChangedBy:   changedBy,
 	}
 }
 
 type Standards struct {
 	ID                string    `json:"id"`
-	ProjectID         string    `json:"project_id"`
+	ProjectName       string    `json:"project_name"`
 	BranchStrategy    string    `json:"branch_strategy,omitempty"`
 	TechStack         string    `json:"tech_stack,omitempty"`
 	CodingConventions string    `json:"coding_conventions,omitempty"`
@@ -124,11 +124,11 @@ type Standards struct {
 	UpdatedAt         time.Time `json:"updated_at"`
 }
 
-func NewStandards(id, projectID, branchStrategy, techStack, codingConventions string) *Standards {
+func NewStandards(id, projectName, branchStrategy, techStack, codingConventions string) *Standards {
 	now := time.Now().UTC()
 	return &Standards{
 		ID:                id,
-		ProjectID:         projectID,
+		ProjectName:       projectName,
 		BranchStrategy:    branchStrategy,
 		TechStack:         techStack,
 		CodingConventions: codingConventions,
@@ -151,13 +151,13 @@ func (s *Standards) Update(branchStrategy, techStack, codingConventions string) 
 }
 
 type ProjectDirectory struct {
-	ProjectID string
-	Dirs      []string
+	ProjectName string
+	Dirs        []string
 }
 
-func DefaultProjectDirectory(projectID string) *ProjectDirectory {
+func DefaultProjectDirectory(projectName string) *ProjectDirectory {
 	return &ProjectDirectory{
-		ProjectID: projectID,
+		ProjectName: projectName,
 		Dirs: []string{
 			".NBCoder",
 			".NBCoder/config",

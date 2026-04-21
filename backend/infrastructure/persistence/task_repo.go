@@ -24,7 +24,7 @@ func (r *InMemoryTaskRepo) Save(task *agent.Task) error {
 	return nil
 }
 
-func (r *InMemoryTaskRepo) FindByID(id string) (*agent.Task, error) {
+func (r *InMemoryTaskRepo) FindByID(id string, projectName string) (*agent.Task, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	task, ok := r.tasks[id]
@@ -53,12 +53,12 @@ func (r *InMemoryTaskRepo) Update(task *agent.Task) error {
 	return nil
 }
 
-func (r *InMemoryTaskRepo) FindByProjectID(projectID string) ([]*agent.Task, error) {
+func (r *InMemoryTaskRepo) FindByProjectName(projectName string) ([]*agent.Task, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var result []*agent.Task
 	for _, t := range r.tasks {
-		if t.ProjectID == projectID {
+		if t.ProjectName == projectName {
 			result = append(result, t)
 		}
 	}
@@ -99,7 +99,7 @@ func (r *InMemoryTaskRepo) FindAll() ([]*agent.Task, error) {
 	return result, nil
 }
 
-func (r *InMemoryTaskRepo) Delete(id string) error {
+func (r *InMemoryTaskRepo) Delete(id string, projectName string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.tasks, id)

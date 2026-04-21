@@ -2,12 +2,12 @@ package requirement
 
 type CardRepo interface {
 	Save(card *Card) error
-	FindByID(id string) (*Card, error)
-	FindByProjectID(projectID string) ([]*Card, error)
+	FindByID(id string, projectName string) (*Card, error)
+	FindByProjectName(projectName string) ([]*Card, error)
 	FindByStatus(status CardStatus) ([]*Card, error)
 	FindAll() ([]*Card, error)
 	Update(card *Card) error
-	Delete(id string) error
+	Delete(id string, projectName string) error
 }
 
 type CardDependencyRepo interface {

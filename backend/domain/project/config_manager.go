@@ -50,11 +50,11 @@ func (cm *ConfigManager) GetAllGlobalConfigs() ([]*GlobalConfig, error) {
 	return cm.globalRepo.FindAll()
 }
 
-func (cm *ConfigManager) GetAllProjectConfigs(projectID string) ([]*ProjectConfig, error) {
-	return cm.projectRepo.FindByProjectID(projectID)
+func (cm *ConfigManager) GetAllProjectConfigs(projectName string) ([]*ProjectConfig, error) {
+	return cm.projectRepo.FindByProjectName(projectName)
 }
 
-func (cm *ConfigManager) GetAllConfigs(projectID string) ([]*ConfigItem, error) {
+func (cm *ConfigManager) GetAllConfigs(projectName string) ([]*ConfigItem, error) {
 	var items []*ConfigItem
 
 	globalConfigs, err := cm.globalRepo.FindAll()
@@ -67,13 +67,13 @@ func (cm *ConfigManager) GetAllConfigs(projectID string) ([]*ConfigItem, error) 
 		items = append(items, item)
 	}
 
-	projectConfigs, err := cm.projectRepo.FindByProjectID(projectID)
+	projectConfigs, err := cm.projectRepo.FindByProjectName(projectName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch project configs: %w", err)
 	}
 
 	for _, config := range projectConfigs {
-		item := NewConfigItem(ConfigScopeProject, projectID, config.Key, config.Value)
+		item := NewConfigItem(ConfigScopeProject, projectName, config.Key, config.Value)
 		items = append(items, item)
 	}
 
@@ -142,8 +142,8 @@ func (cm *ConfigManager) DeleteGlobalConfig(id string) error {
 	return cm.globalRepo.Delete(id)
 }
 
-func (cm *ConfigManager) DeleteProjectConfig(id string) error {
-	return cm.projectRepo.Delete(id)
+func (cm *ConfigManager) DeleteProjectConfig(id, projectName string) error {
+	return cm.projectRepo.Delete(id, projectName)
 }
 
 func (cm *ConfigManager) CopyGlobalToProject(projectID, key string) error {

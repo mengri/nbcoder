@@ -9,54 +9,81 @@ import (
 )
 
 type ConfigChangeLogRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewConfigChangeLogRepo(db *gorm.DB) project.ConfigChangeLogRepo {
-	return &ConfigChangeLogRepo{db: db}
+func NewConfigChangeLogRepo(dbProvider DBProvider) project.ConfigChangeLogRepo {
+	return &ConfigChangeLogRepo{dbProvider: dbProvider}
+}
+
+func (r *ConfigChangeLogRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *ConfigChangeLogRepo) Save(log *project.ConfigChangeLog) error {
-	model := &models.ConfigChangeLog{
-		ID:         log.ID,
-		ProjectID:  log.ProjectID,
-		ConfigKey:  log.ConfigKey,
-		OldValue:   log.OldValue,
-		NewValue:   log.NewValue,
-		ChangedAt:  log.ChangedAt,
-		ChangedBy:  log.ChangedBy,
+	db, err := r.getDB(log.ProjectName)
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Save(model)
+	model := &models.ConfigChangeLog{
+		ID:          log.ID,
+		ProjectName: log.ProjectName,
+		ConfigKey:   log.ConfigKey,
+		OldValue:    log.OldValue,
+		NewValue:    log.NewValue,
+		ChangedAt:   log.ChangedAt,
+		ChangedBy:   log.ChangedBy,
+	}
+
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save config change log: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *ConfigChangeLogRepo) FindByProjectID(projectID string) ([]*project.ConfigChangeLog, error) {
+func (r *ConfigChangeLogRepo) FindByProjectName(projectName string) ([]*project.ConfigChangeLog, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.ConfigChangeLog
-	result := r.db.Where("project_id = ?", projectID).Order("changed_at DESC").Find(&models)
+	result := db.Where("project_name = ?", projectName).Order("changed_at DESC").Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find config change logs by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find config change logs by project name: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
-func (r *ConfigChangeLogRepo) FindByConfigKey(projectID, configKey string) ([]*project.ConfigChangeLog, error) {
+func (r *ConfigChangeLogRepo) FindByConfigKey(projectName, configKey string) ([]*project.ConfigChangeLog, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.ConfigChangeLog
-	result := r.db.Where("project_id = ? AND config_key = ?", projectID, configKey).Order("changed_at DESC").Find(&models)
+	result := db.Where("project_name = ? AND config_key = ?", projectName, configKey).Order("changed_at DESC").Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find config change logs by project id and config key: %w", result.Error)
+		return nil, fmt.Errorf("failed to find config change logs by project name and config key: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
 func (r *ConfigChangeLogRepo) FindByChangedBy(changedBy string) ([]*project.ConfigChangeLog, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.ConfigChangeLog
-	result := r.db.Where("changed_by = ?", changedBy).Order("changed_at DESC").Find(&models)
+	result := db.Where("changed_by = ?", changedBy).Order("changed_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find config change logs by changed by: %w", result.Error)
 	}
@@ -65,8 +92,13 @@ func (r *ConfigChangeLogRepo) FindByChangedBy(changedBy string) ([]*project.Conf
 }
 
 func (r *ConfigChangeLogRepo) FindByTimeRange(start, end int64) ([]*project.ConfigChangeLog, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.ConfigChangeLog
-	result := r.db.Where("changed_at BETWEEN ? AND ?", start, end).Order("changed_at DESC").Find(&models)
+	result := db.Where("changed_at BETWEEN ? AND ?", start, end).Order("changed_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find config change logs by time range: %w", result.Error)
 	}
@@ -76,13 +108,13 @@ func (r *ConfigChangeLogRepo) FindByTimeRange(start, end int64) ([]*project.Conf
 
 func (r *ConfigChangeLogRepo) modelToDomain(m *models.ConfigChangeLog) *project.ConfigChangeLog {
 	return &project.ConfigChangeLog{
-		ID:         m.ID,
-		ProjectID:  m.ProjectID,
-		ConfigKey:  m.ConfigKey,
-		OldValue:   m.OldValue,
-		NewValue:   m.NewValue,
-		ChangedAt:  m.ChangedAt,
-		ChangedBy:  m.ChangedBy,
+		ID:          m.ID,
+		ProjectName: m.ProjectName,
+		ConfigKey:   m.ConfigKey,
+		OldValue:    m.OldValue,
+		NewValue:    m.NewValue,
+		ChangedAt:   m.ChangedAt,
+		ChangedBy:   m.ChangedBy,
 	}
 }
 

@@ -1,11 +1,10 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	notifyApp "github.com/mengri/nbcoder/application/notify"
 	"github.com/mengri/nbcoder/domain/notify"
+	"github.com/mengri/nbcoder/pkg/response"
 	"github.com/mengri/nbcoder/pkg/uid"
 )
 
@@ -39,105 +38,105 @@ func (h *NotifyHandler) Send(c *gin.Context) {
 	var req struct {
 		Title     string `json:"title" binding:"required"`
 		Content   string `json:"content" binding:"required"`
-		EventType string `json:"event_type"`
+		EventType string `json:"eventType"`
 		Channel   string `json:"channel" binding:"required"`
 		Recipient string `json:"recipient" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	n, err := h.notifyService.Send(req.Title, req.Content, req.EventType, notify.ChannelType(req.Channel), req.Recipient)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "发送通知失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, toNotificationResponse(n))
+	response.Created(c, toNotificationResponse(n))
 }
 
 func (h *NotifyHandler) Broadcast(c *gin.Context) {
 	var req struct {
 		Title     string `json:"title" binding:"required"`
 		Content   string `json:"content" binding:"required"`
-		EventType string `json:"event_type"`
+		EventType string `json:"eventType"`
 		Recipient string `json:"recipient" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	notifications, err := h.notifyService.SendToAllChannels(req.Title, req.Content, req.EventType, req.Recipient)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "广播通知失败："+err.Error())
 		return
 	}
 	result := make([]gin.H, 0, len(notifications))
 	for _, n := range notifications {
 		result = append(result, toNotificationResponse(n))
 	}
-	c.JSON(http.StatusCreated, result)
+	response.Created(c, result)
 }
 
 func (h *NotifyHandler) ListByRecipient(c *gin.Context) {
 	recipient := c.Query("recipient")
 	if recipient == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "recipient is required"})
+		response.BadRequest(c, "recipient is required")
 		return
 	}
 	notifications, err := h.notifyService.GetByRecipient(recipient)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取通知列表失败："+err.Error())
 		return
 	}
 	result := make([]gin.H, 0, len(notifications))
 	for _, n := range notifications {
 		result = append(result, toNotificationResponse(n))
 	}
-	c.JSON(http.StatusOK, result)
+	response.Success(c, result)
 }
 
 func (h *NotifyHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	n, err := h.notifyService.GetByID(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取通知失败："+err.Error())
 		return
 	}
 	if n == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "notification not found"})
+		response.NotFound(c, "通知不存在")
 		return
 	}
-	c.JSON(http.StatusOK, toNotificationResponse(n))
+	response.Success(c, toNotificationResponse(n))
 }
 
 func (h *NotifyHandler) MarkRead(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.notifyService.MarkRead(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "标记通知已读失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "notification marked as read"})
+	response.Success(c, nil)
 }
 
 func (h *NotifyHandler) Subscribe(c *gin.Context) {
 	var req struct {
 		Recipient string `json:"recipient" binding:"required"`
-		EventType string `json:"event_type" binding:"required"`
+		EventType string `json:"eventType" binding:"required"`
 		Channel   string `json:"channel" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	sub, err := h.notifyService.Subscribe(uid.NewID(), req.Recipient, req.EventType, notify.ChannelType(req.Channel))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "订阅失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{
+	response.Created(c, gin.H{
 		"id":         sub.ID,
 		"recipient":  sub.Recipient,
-		"event_type": sub.EventType,
+		"eventType":  sub.EventType,
 		"channel":    string(sub.Channel),
 		"muted":      sub.Muted,
 	})
@@ -146,21 +145,21 @@ func (h *NotifyHandler) Subscribe(c *gin.Context) {
 func (h *NotifyHandler) Unsubscribe(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.notifyService.Unsubscribe(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "取消订阅失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "unsubscribed"})
+	response.Success(c, nil)
 }
 
 func (h *NotifyHandler) GetSubscriptions(c *gin.Context) {
 	recipient := c.Query("recipient")
 	if recipient == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "recipient is required"})
+		response.BadRequest(c, "recipient is required")
 		return
 	}
 	subs, err := h.notifyService.GetSubscriptions(recipient)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取订阅列表失败："+err.Error())
 		return
 	}
 	result := make([]gin.H, 0, len(subs))
@@ -168,12 +167,12 @@ func (h *NotifyHandler) GetSubscriptions(c *gin.Context) {
 		result = append(result, gin.H{
 			"id":         s.ID,
 			"recipient":  s.Recipient,
-			"event_type": s.EventType,
+			"eventType":  s.EventType,
 			"channel":    string(s.Channel),
 			"muted":      s.Muted,
 		})
 	}
-	c.JSON(http.StatusOK, result)
+	response.Success(c, result)
 }
 
 func (h *NotifyHandler) RegisterChannel(c *gin.Context) {
@@ -182,45 +181,45 @@ func (h *NotifyHandler) RegisterChannel(c *gin.Context) {
 		Config string `json:"config"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	channel := notify.NewChannel(uid.NewID(), notify.ChannelType(req.Type), req.Config)
 	if err := h.notifyService.RegisterChannel(channel); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "注册通道失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"id": channel.ID, "type": string(channel.Type)})
+	response.Created(c, gin.H{"id": channel.ID, "type": string(channel.Type)})
 }
 
 func (h *NotifyHandler) ListChannels(c *gin.Context) {
 	channelType := c.Query("type")
 	channels, err := h.notifyService.ListChannels(notify.ChannelType(channelType))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取通道列表失败："+err.Error())
 		return
 	}
 	result := make([]gin.H, 0, len(channels))
 	for _, ch := range channels {
 		result = append(result, gin.H{"id": ch.ID, "type": string(ch.Type), "config": ch.Config})
 	}
-	c.JSON(http.StatusOK, result)
+	response.Success(c, result)
 }
 
 func toNotificationResponse(n *notify.Notification) gin.H {
 	resp := gin.H{
-		"id":         n.ID,
-		"title":      n.Title,
-		"content":    n.Content,
-		"event_type": n.EventType,
-		"channel":    string(n.Channel),
-		"recipient":  n.Recipient,
-		"status":     string(n.Status),
-		"read":       n.Read,
-		"created_at": n.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		"id":        n.ID,
+		"title":     n.Title,
+		"content":   n.Content,
+		"eventType": n.EventType,
+		"channel":   string(n.Channel),
+		"recipient": n.Recipient,
+		"status":    string(n.Status),
+		"read":      n.Read,
+		"createdAt": n.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if n.SentAt != nil {
-		resp["sent_at"] = n.SentAt.Format("2006-01-02T15:04:05Z")
+		resp["sentAt"] = n.SentAt.Format("2006-01-02T15:04:05Z")
 	}
 	return resp
 }

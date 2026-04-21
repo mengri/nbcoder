@@ -20,7 +20,7 @@ type PullRequest struct {
 	SourceBranch   string            `json:"source_branch"`
 	TargetBranch   string            `json:"target_branch"`
 	Status         PullRequestStatus `json:"status"`
-	ProjectID      string            `json:"project_id,omitempty"`
+	ProjectName    string            `json:"project_name,omitempty"`
 	Author         string            `json:"author,omitempty"`
 	GeneratedDesc  string            `json:"generated_desc,omitempty"`
 	SquashCommitMsg string           `json:"squash_commit_msg,omitempty"`

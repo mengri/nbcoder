@@ -2,7 +2,6 @@ package sqlite
 
 import (
 	"fmt"
-
 	"time"
 
 	"github.com/mengri/nbcoder/domain/pipeline"
@@ -11,14 +10,23 @@ import (
 )
 
 type PipelineRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewPipelineRepo(db *gorm.DB) pipeline.PipelineRepo {
-	return &PipelineRepo{db: db}
+func NewPipelineRepo(dbProvider DBProvider) pipeline.PipelineRepo {
+	return &PipelineRepo{dbProvider: dbProvider}
+}
+
+func (r *PipelineRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *PipelineRepo) Save(p *pipeline.Pipeline) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.Pipeline{
 		ID:        p.ID,
 		CardID:    p.CardID,
@@ -26,7 +34,7 @@ func (r *PipelineRepo) Save(p *pipeline.Pipeline) error {
 		UpdatedAt: p.UpdatedAt,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save pipeline: %w", result.Error)
 	}
@@ -34,8 +42,13 @@ func (r *PipelineRepo) Save(p *pipeline.Pipeline) error {
 }
 
 func (r *PipelineRepo) FindByID(id string) (*pipeline.Pipeline, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Pipeline
-	result := r.db.Preload("StageRecords").First(&model, "id = ?", id)
+	result := db.Preload("StageRecords").First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -47,8 +60,13 @@ func (r *PipelineRepo) FindByID(id string) (*pipeline.Pipeline, error) {
 }
 
 func (r *PipelineRepo) FindByCardID(cardID string) (*pipeline.Pipeline, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Pipeline
-	result := r.db.Preload("StageRecords").Where("card_id = ?", cardID).First(&model)
+	result := db.Preload("StageRecords").Where("card_id = ?", cardID).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -60,6 +78,11 @@ func (r *PipelineRepo) FindByCardID(cardID string) (*pipeline.Pipeline, error) {
 }
 
 func (r *PipelineRepo) Update(p *pipeline.Pipeline) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.Pipeline{
 		ID:        p.ID,
 		CardID:    p.CardID,
@@ -67,7 +90,7 @@ func (r *PipelineRepo) Update(p *pipeline.Pipeline) error {
 		UpdatedAt: p.UpdatedAt,
 	}
 
-	result := r.db.Model(&models.Pipeline{}).Where("id = ?", p.ID).Updates(model)
+	result := db.Model(&models.Pipeline{}).Where("id = ?", p.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update pipeline: %w", result.Error)
 	}
@@ -75,8 +98,13 @@ func (r *PipelineRepo) Update(p *pipeline.Pipeline) error {
 }
 
 func (r *PipelineRepo) FindAll() ([]*pipeline.Pipeline, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Pipeline
-	result := r.db.Preload("StageRecords").Find(&models)
+	result := db.Preload("StageRecords").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find all pipelines: %w", result.Error)
 	}

@@ -9,19 +9,31 @@ import (
 )
 
 type DocumentRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewDocumentRepo(db *gorm.DB) knowledge.DocumentRepo {
-	return &DocumentRepo{db: db}
+func NewDocumentRepo(dbProvider DBProvider) knowledge.DocumentRepo {
+	return &DocumentRepo{dbProvider: dbProvider}
+}
+
+func (r *DocumentRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *DocumentRepo) Save(doc *knowledge.Document) error {
+	db, err := r.getDB(doc.ProjectName)
+	if err != nil {
+		return err
+	}
+
 	model := &models.Document{
 		ID:          doc.ID,
 		Name:        doc.Name,
 		Path:        doc.Path,
-		ProjectID:   doc.ProjectID,
+		ProjectName: doc.ProjectName,
 		DirectoryID: doc.DirectoryID,
 		Content:     doc.Content,
 		Version:     doc.Version,
@@ -29,16 +41,21 @@ func (r *DocumentRepo) Save(doc *knowledge.Document) error {
 		UpdatedAt:   doc.UpdatedAt,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save document: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *DocumentRepo) FindByID(id string) (*knowledge.Document, error) {
+func (r *DocumentRepo) FindByID(id string, projectName string) (*knowledge.Document, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Document
-	result := r.db.Preload("Chunks").Preload("Indices").First(&model, "id = ?", id)
+	result := db.Preload("Chunks").Preload("Indices").First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -49,19 +66,29 @@ func (r *DocumentRepo) FindByID(id string) (*knowledge.Document, error) {
 	return r.modelToDomain(&model), nil
 }
 
-func (r *DocumentRepo) FindByProjectID(projectID string) ([]*knowledge.Document, error) {
+func (r *DocumentRepo) FindByProjectName(projectName string) ([]*knowledge.Document, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Document
-	result := r.db.Where("project_id = ?", projectID).Order("created_at DESC").Find(&models)
+	result := db.Where("project_name = ?", projectName).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find documents by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find documents by project name: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
 func (r *DocumentRepo) FindByDirectoryID(directoryID string) ([]*knowledge.Document, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Document
-	result := r.db.Where("directory_id = ?", directoryID).Order("created_at DESC").Find(&models)
+	result := db.Where("directory_id = ?", directoryID).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find documents by directory id: %w", result.Error)
 	}
@@ -70,11 +97,16 @@ func (r *DocumentRepo) FindByDirectoryID(directoryID string) ([]*knowledge.Docum
 }
 
 func (r *DocumentRepo) Update(doc *knowledge.Document) error {
+	db, err := r.getDB(doc.ProjectName)
+	if err != nil {
+		return err
+	}
+
 	model := &models.Document{
 		ID:          doc.ID,
 		Name:        doc.Name,
 		Path:        doc.Path,
-		ProjectID:   doc.ProjectID,
+		ProjectName: doc.ProjectName,
 		DirectoryID: doc.DirectoryID,
 		Content:     doc.Content,
 		Version:     doc.Version,
@@ -82,15 +114,20 @@ func (r *DocumentRepo) Update(doc *knowledge.Document) error {
 		UpdatedAt:   doc.UpdatedAt,
 	}
 
-	result := r.db.Model(&models.Document{}).Where("id = ?", doc.ID).Updates(model)
+	result := db.Model(&models.Document{}).Where("id = ?", doc.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update document: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *DocumentRepo) Delete(id string) error {
-	result := r.db.Delete(&models.Document{}, "id = ?", id)
+func (r *DocumentRepo) Delete(id string, projectName string) error {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.Document{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete document: %w", result.Error)
 	}
@@ -102,7 +139,7 @@ func (r *DocumentRepo) modelToDomain(m *models.Document) *knowledge.Document {
 		ID:          m.ID,
 		Name:        m.Name,
 		Path:        m.Path,
-		ProjectID:   m.ProjectID,
+		ProjectName: m.ProjectName,
 		DirectoryID: m.DirectoryID,
 		Content:     m.Content,
 		Version:     m.Version,
@@ -120,34 +157,51 @@ func (r *DocumentRepo) modelsToDomain(models []models.Document) []*knowledge.Doc
 }
 
 type DirectoryRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewDirectoryRepo(db *gorm.DB) knowledge.DirectoryRepo {
-	return &DirectoryRepo{db: db}
+func NewDirectoryRepo(dbProvider DBProvider) knowledge.DirectoryRepo {
+	return &DirectoryRepo{dbProvider: dbProvider}
+}
+
+func (r *DirectoryRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *DirectoryRepo) Save(dir *knowledge.Directory) error {
-	model := &models.Directory{
-		ID:        dir.ID,
-		Name:      dir.Name,
-		ParentID:  dir.ParentID,
-		ProjectID: dir.ProjectID,
-		Path:      dir.Path,
-		CreatedAt: dir.CreatedAt,
-		UpdatedAt: dir.UpdatedAt,
+	db, err := r.getDB(dir.ProjectName)
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Save(model)
+	model := &models.Directory{
+		ID:          dir.ID,
+		Name:        dir.Name,
+		ParentID:    dir.ParentID,
+		ProjectName: dir.ProjectName,
+		Path:        dir.Path,
+		CreatedAt:   dir.CreatedAt,
+		UpdatedAt:   dir.UpdatedAt,
+	}
+
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save directory: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *DirectoryRepo) FindByID(id string) (*knowledge.Directory, error) {
+func (r *DirectoryRepo) FindByID(id string, projectName string) (*knowledge.Directory, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Directory
-	result := r.db.Preload("Children").Preload("Documents").First(&model, "id = ?", id)
+	result := db.Preload("Children").Preload("Documents").First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -158,19 +212,29 @@ func (r *DirectoryRepo) FindByID(id string) (*knowledge.Directory, error) {
 	return r.modelToDomain(&model), nil
 }
 
-func (r *DirectoryRepo) FindByProjectID(projectID string) ([]*knowledge.Directory, error) {
+func (r *DirectoryRepo) FindByProjectName(projectName string) ([]*knowledge.Directory, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Directory
-	result := r.db.Where("project_id = ?", projectID).Find(&models)
+	result := db.Where("project_name = ?", projectName).Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find directories by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find directories by project name: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
 func (r *DirectoryRepo) FindByParentID(parentID string) ([]*knowledge.Directory, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Directory
-	result := r.db.Where("parent_id = ?", parentID).Find(&models)
+	result := db.Where("parent_id = ?", parentID).Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find directories by parent id: %w", result.Error)
 	}
@@ -178,9 +242,14 @@ func (r *DirectoryRepo) FindByParentID(parentID string) ([]*knowledge.Directory,
 	return r.modelsToDomain(models), nil
 }
 
-func (r *DirectoryRepo) FindRootByProjectID(projectID string) (*knowledge.Directory, error) {
+func (r *DirectoryRepo) FindRootByProjectName(projectName string) (*knowledge.Directory, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Directory
-	result := r.db.Where("project_id = ? AND parent_id = ''", projectID).First(&model)
+	result := db.Where("project_name = ? AND parent_id = ''", projectName).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -192,25 +261,35 @@ func (r *DirectoryRepo) FindRootByProjectID(projectID string) (*knowledge.Direct
 }
 
 func (r *DirectoryRepo) Update(dir *knowledge.Directory) error {
-	model := &models.Directory{
-		ID:        dir.ID,
-		Name:      dir.Name,
-		ParentID:  dir.ParentID,
-		ProjectID: dir.ProjectID,
-		Path:      dir.Path,
-		CreatedAt: dir.CreatedAt,
-		UpdatedAt: dir.UpdatedAt,
+	db, err := r.getDB(dir.ProjectName)
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Model(&models.Directory{}).Where("id = ?", dir.ID).Updates(model)
+	model := &models.Directory{
+		ID:          dir.ID,
+		Name:        dir.Name,
+		ParentID:    dir.ParentID,
+		ProjectName: dir.ProjectName,
+		Path:        dir.Path,
+		CreatedAt:   dir.CreatedAt,
+		UpdatedAt:   dir.UpdatedAt,
+	}
+
+	result := db.Model(&models.Directory{}).Where("id = ?", dir.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update directory: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *DirectoryRepo) Delete(id string) error {
-	result := r.db.Delete(&models.Directory{}, "id = ?", id)
+func (r *DirectoryRepo) Delete(id string, projectName string) error {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.Directory{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete directory: %w", result.Error)
 	}
@@ -219,13 +298,13 @@ func (r *DirectoryRepo) Delete(id string) error {
 
 func (r *DirectoryRepo) modelToDomain(m *models.Directory) *knowledge.Directory {
 	return &knowledge.Directory{
-		ID:        m.ID,
-		Name:      m.Name,
-		ParentID:  m.ParentID,
-		ProjectID: m.ProjectID,
-		Path:      m.Path,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
+		ID:          m.ID,
+		Name:        m.Name,
+		ParentID:    m.ParentID,
+		ProjectName: m.ProjectName,
+		Path:        m.Path,
+		CreatedAt:   m.CreatedAt,
+		UpdatedAt:   m.UpdatedAt,
 	}
 }
 

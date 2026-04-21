@@ -9,22 +9,31 @@ import (
 )
 
 type CardDependencyRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewCardDependencyRepo(db *gorm.DB) requirement.CardDependencyRepo {
-	return &CardDependencyRepo{db: db}
+func NewCardDependencyRepo(dbProvider DBProvider) requirement.CardDependencyRepo {
+	return &CardDependencyRepo{dbProvider: dbProvider}
+}
+
+func (r *CardDependencyRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *CardDependencyRepo) Save(d *requirement.CardDependency) error {
-	model := &models.CardDependency{
-		ID:              d.ID,
-		CardID:          d.CardID,
-		DependsOnCardID: d.DependsOnID,
-		DependencyType:  string(d.Type),
+	db, err := r.getDB()
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Save(model)
+	model := &models.CardDependency{
+		ID:             d.ID,
+		CardID:         d.CardID,
+		DependsOnCardID: d.DependsOnID,
+		DependencyType: string(d.Type),
+	}
+
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save card dependency: %w", result.Error)
 	}
@@ -32,8 +41,13 @@ func (r *CardDependencyRepo) Save(d *requirement.CardDependency) error {
 }
 
 func (r *CardDependencyRepo) FindByID(id string) (*requirement.CardDependency, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.CardDependency
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -45,8 +59,13 @@ func (r *CardDependencyRepo) FindByID(id string) (*requirement.CardDependency, e
 }
 
 func (r *CardDependencyRepo) FindAll() ([]*requirement.CardDependency, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CardDependency
-	result := r.db.Find(&models)
+	result := db.Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find all card dependencies: %w", result.Error)
 	}
@@ -55,13 +74,18 @@ func (r *CardDependencyRepo) FindAll() ([]*requirement.CardDependency, error) {
 }
 
 func (r *CardDependencyRepo) Update(d *requirement.CardDependency) error {
-	model := &models.CardDependency{
-		CardID:          d.CardID,
-		DependsOnCardID: d.DependsOnID,
-		DependencyType:  string(d.Type),
+	db, err := r.getDB()
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Model(&models.CardDependency{}).Where("id = ?", d.ID).Updates(model)
+	model := &models.CardDependency{
+		CardID:         d.CardID,
+		DependsOnCardID: d.DependsOnID,
+		DependencyType: string(d.Type),
+	}
+
+	result := db.Model(&models.CardDependency{}).Where("id = ?", d.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update card dependency: %w", result.Error)
 	}
@@ -69,7 +93,12 @@ func (r *CardDependencyRepo) Update(d *requirement.CardDependency) error {
 }
 
 func (r *CardDependencyRepo) Delete(id string) error {
-	result := r.db.Delete(&models.CardDependency{}, "id = ?", id)
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.CardDependency{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete card dependency: %w", result.Error)
 	}
@@ -77,7 +106,12 @@ func (r *CardDependencyRepo) Delete(id string) error {
 }
 
 func (r *CardDependencyRepo) DeleteByCardID(cardID string) error {
-	result := r.db.Where("card_id = ?", cardID).Delete(&models.CardDependency{})
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Where("card_id = ?", cardID).Delete(&models.CardDependency{})
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete card dependencies by card id: %w", result.Error)
 	}
@@ -85,8 +119,13 @@ func (r *CardDependencyRepo) DeleteByCardID(cardID string) error {
 }
 
 func (r *CardDependencyRepo) FindByCardID(cardID string) ([]*requirement.CardDependency, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CardDependency
-	result := r.db.Where("card_id = ?", cardID).Find(&models)
+	result := db.Where("card_id = ?", cardID).Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find dependencies by card id: %w", result.Error)
 	}
@@ -95,8 +134,13 @@ func (r *CardDependencyRepo) FindByCardID(cardID string) ([]*requirement.CardDep
 }
 
 func (r *CardDependencyRepo) FindByDependsOnCardID(dependsOnCardID string) ([]*requirement.CardDependency, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CardDependency
-	result := r.db.Where("depends_on_card_id = ?", dependsOnCardID).Find(&models)
+	result := db.Where("depends_on_card_id = ?", dependsOnCardID).Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find dependencies by depends on card id: %w", result.Error)
 	}
@@ -109,8 +153,13 @@ func (r *CardDependencyRepo) FindByDependsOnID(dependsOnID string) ([]*requireme
 }
 
 func (r *CardDependencyRepo) FindByCardIDAndDependsOnCardID(cardID, dependsOnCardID string) (*requirement.CardDependency, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.CardDependency
-	result := r.db.Where("card_id = ? AND depends_on_card_id = ?", cardID, dependsOnCardID).First(&model)
+	result := db.Where("card_id = ? AND depends_on_card_id = ?", cardID, dependsOnCardID).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil

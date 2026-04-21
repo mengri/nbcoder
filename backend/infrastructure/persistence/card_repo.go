@@ -39,7 +39,7 @@ func (r *InMemoryCardRepo) FindByProjectID(projectID string) ([]*requirement.Car
 	defer r.mu.RUnlock()
 	var result []*requirement.Card
 	for _, c := range r.cards {
-		if c.ProjectID == projectID {
+		if c.ProjectName == projectID {
 			result = append(result, c)
 		}
 	}

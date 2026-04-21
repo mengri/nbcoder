@@ -1,11 +1,10 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	pipelineApp "github.com/mengri/nbcoder/application/pipeline"
 	"github.com/mengri/nbcoder/application/dto"
+	"github.com/mengri/nbcoder/pkg/response"
 	"github.com/mengri/nbcoder/pkg/uid"
 )
 
@@ -32,16 +31,16 @@ func (h *PipelineHandler) RegisterRoutes(router *gin.RouterGroup) {
 func (h *PipelineHandler) CreatePipeline(c *gin.Context) {
 	var req dto.CreatePipelineRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	id := uid.NewID()
 	aggregate, err := h.pipelineService.CreatePipeline(id, req.CardID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "创建流水线失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, dto.PipelineResponse{
+	response.Created(c, dto.PipelineResponse{
 		ID:     aggregate.Pipeline.ID,
 		CardID: aggregate.Pipeline.CardID,
 	})
@@ -50,31 +49,31 @@ func (h *PipelineHandler) CreatePipeline(c *gin.Context) {
 func (h *PipelineHandler) StartNextStage(c *gin.Context) {
 	pipelineID := c.Param("id")
 	if err := h.pipelineService.StartNextStage(pipelineID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "启动流水线失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "stage started"})
+	response.Success(c, nil)
 }
 
 func (h *PipelineHandler) CompleteStage(c *gin.Context) {
 	pipelineID := c.Param("id")
 	if err := h.pipelineService.CompleteStage(pipelineID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "完成流水线阶段失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "stage completed"})
+	response.Success(c, nil)
 }
 
 func (h *PipelineHandler) GetPipeline(c *gin.Context) {
 	pipelineID := c.Param("id")
 	pl, err := h.pipelineService.GetPipeline(pipelineID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取流水线失败："+err.Error())
 		return
 	}
 	if pl == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "pipeline not found"})
+		response.NotFound(c, "流水线不存在")
 		return
 	}
-	c.JSON(http.StatusOK, pl)
+	response.Success(c, pl)
 }

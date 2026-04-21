@@ -2,14 +2,14 @@ package agent
 
 type TaskRepo interface {
 	Save(task *Task) error
-	FindByID(id string) (*Task, error)
-	FindByProjectID(projectID string) ([]*Task, error)
+	FindByID(id string, projectName string) (*Task, error)
+	FindByProjectName(projectName string) ([]*Task, error)
 	FindByStatus(status TaskStatus) ([]*Task, error)
 	FindByAgentID(agentID string) ([]*Task, error)
 	FindByPipelineID(pipelineID string) ([]*Task, error)
 	FindAll() ([]*Task, error)
 	Update(task *Task) error
-	Delete(id string) error
+	Delete(id string, projectName string) error
 }
 
 type SkillRepo interface {

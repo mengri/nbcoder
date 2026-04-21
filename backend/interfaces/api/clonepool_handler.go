@@ -1,10 +1,9 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	clonepoolApp "github.com/mengri/nbcoder/application/clonepool"
+	"github.com/mengri/nbcoder/pkg/response"
 )
 
 type ClonePoolHandler struct {
@@ -30,47 +29,47 @@ func (h *ClonePoolHandler) RegisterRoutes(router *gin.RouterGroup) {
 
 func (h *ClonePoolHandler) Acquire(c *gin.Context) {
 	var req struct {
-		RepositoryID string `json:"repository_id"`
-		TaskID       string `json:"task_id"`
+		RepositoryID string `json:"repositoryId"`
+		TaskID       string `json:"taskId"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	inst, err := h.clonePoolService.AcquireInstance(req.RepositoryID, req.TaskID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取实例失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, inst)
+	response.Success(c, inst)
 }
 
 func (h *ClonePoolHandler) Release(c *gin.Context) {
 	instanceID := c.Param("id")
 	if err := h.clonePoolService.ReleaseInstance(instanceID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "释放实例失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "instance released"})
+	response.Success(c, nil)
 }
 
 func (h *ClonePoolHandler) CreateInstance(c *gin.Context) {
 	var req struct {
-		RepositoryID string `json:"repository_id" binding:"required"`
-		RepoURL      string `json:"repo_url" binding:"required"`
+		RepositoryID string `json:"repositoryId" binding:"required"`
+		RepoURL      string `json:"repoUrl" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 
 	inst, err := h.clonePoolService.CreateCloneInstance(c.Request.Context(), req.RepositoryID, req.RepoURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "创建实例失败："+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, inst)
+	response.Created(c, inst)
 }
 
 func (h *ClonePoolHandler) CommitChanges(c *gin.Context) {
@@ -79,25 +78,25 @@ func (h *ClonePoolHandler) CommitChanges(c *gin.Context) {
 		Message string `json:"message" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 
 	if err := h.clonePoolService.CommitChanges(c.Request.Context(), instanceID, req.Message); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "提交更改失败："+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "changes committed"})
+	response.Success(c, nil)
 }
 
 func (h *ClonePoolHandler) GetStatus(c *gin.Context) {
 	instanceID := c.Param("id")
 	status, err := h.clonePoolService.GetStatus(c.Request.Context(), instanceID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取状态失败："+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, status)
+	response.Success(c, status)
 }

@@ -15,13 +15,12 @@ type Card struct {
 	Priority         string         `gorm:"type:varchar(50);not null;default:'MEDIUM';index" json:"priority"`
 	StructuredOutput string         `gorm:"type:text" json:"structured_output"`
 	PipelineID       string         `gorm:"type:varchar(36);index" json:"pipeline_id"`
-	ProjectID        string         `gorm:"type:varchar(36);not null;index:idx_card_project" json:"project_id"`
+	ProjectName      string         `gorm:"type:varchar(255);not null;index:idx_card_project" json:"project_name"`
 	CreatedAt        time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt        time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	DeletedAt        gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 	SupersededBy     string         `gorm:"type:varchar(36);index" json:"superseded_by"`
 
-	Project     *Project           `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
 	Pipeline    *Pipeline          `gorm:"foreignKey:PipelineID" json:"pipeline,omitempty"`
 	Dependencies []CardDependency  `gorm:"foreignKey:CardID" json:"dependencies,omitempty"`
 	Dependents  []CardDependency   `gorm:"foreignKey:DependsOnCardID" json:"dependents,omitempty"`

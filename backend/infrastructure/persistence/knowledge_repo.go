@@ -39,7 +39,7 @@ func (r *InMemoryDocumentRepo) FindByProjectID(projectID string) ([]*knowledge.D
 	defer r.mu.RUnlock()
 	var result []*knowledge.Document
 	for _, doc := range r.docs {
-		if doc.ProjectID == projectID {
+		if doc.ProjectName == projectID {
 			result = append(result, doc)
 		}
 	}
@@ -272,7 +272,7 @@ func (r *InMemoryDirectoryRepo) FindByProjectID(projectID string) ([]*knowledge.
 	defer r.mu.RUnlock()
 	var result []*knowledge.Directory
 	for _, dir := range r.dirs {
-		if dir.ProjectID == projectID {
+		if dir.ProjectName == projectID {
 			result = append(result, dir)
 		}
 	}

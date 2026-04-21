@@ -19,8 +19,8 @@ func NewReviewService(reviewRepo git.ReviewRepo, prRepo git.PullRequestRepo) *Re
 	}
 }
 
-func (s *ReviewService) CreateReview(pullRequestID, reviewer string) (*git.Review, error) {
-	pr, err := s.prRepo.FindByID(pullRequestID)
+func (s *ReviewService) CreateReview(pullRequestID, reviewer, projectName string) (*git.Review, error) {
+	pr, err := s.prRepo.FindByID(pullRequestID, projectName)
 	if err != nil {
 		return nil, err
 	}

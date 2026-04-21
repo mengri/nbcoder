@@ -10,18 +10,27 @@ import (
 )
 
 type CloneInstanceRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewCloneInstanceRepo(db *gorm.DB) clonepool.CloneInstanceRepo {
-	return &CloneInstanceRepo{db: db}
+func NewCloneInstanceRepo(dbProvider DBProvider) clonepool.CloneInstanceRepo {
+	return &CloneInstanceRepo{dbProvider: dbProvider}
+}
+
+func (r *CloneInstanceRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *CloneInstanceRepo) Save(instance *clonepool.CloneInstance) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.CloneInstance{
 		ID:         instance.ID,
 		Name:       "Clone Instance",
-		ProjectID:  "",
+		ProjectName: "",
 		SourcePath: "",
 		TargetPath: "",
 		Status:     string(instance.Status),
@@ -31,7 +40,7 @@ func (r *CloneInstanceRepo) Save(instance *clonepool.CloneInstance) error {
 		UpdatedAt:  instance.UpdatedAt,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save clone instance: %w", result.Error)
 	}
@@ -39,8 +48,13 @@ func (r *CloneInstanceRepo) Save(instance *clonepool.CloneInstance) error {
 }
 
 func (r *CloneInstanceRepo) FindByID(id string) (*clonepool.CloneInstance, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.CloneInstance
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -52,8 +66,13 @@ func (r *CloneInstanceRepo) FindByID(id string) (*clonepool.CloneInstance, error
 }
 
 func (r *CloneInstanceRepo) FindByRepositoryID(repositoryID string) ([]*clonepool.CloneInstance, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CloneInstance
-	result := r.db.Find(&models)
+	result := db.Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find clone instances: %w", result.Error)
 	}
@@ -62,8 +81,13 @@ func (r *CloneInstanceRepo) FindByRepositoryID(repositoryID string) ([]*clonepoo
 }
 
 func (r *CloneInstanceRepo) FindByStatus(status clonepool.CloneInstanceStatus) ([]*clonepool.CloneInstance, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CloneInstance
-	result := r.db.Where("status = ?", string(status)).Find(&models)
+	result := db.Where("status = ?", string(status)).Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find clone instances by status: %w", result.Error)
 	}
@@ -72,10 +96,15 @@ func (r *CloneInstanceRepo) FindByStatus(status clonepool.CloneInstanceStatus) (
 }
 
 func (r *CloneInstanceRepo) Update(instance *clonepool.CloneInstance) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.CloneInstance{
 		ID:         instance.ID,
 		Name:       "Clone Instance",
-		ProjectID:  "",
+		ProjectName: "",
 		SourcePath: "",
 		TargetPath: "",
 		Status:     string(instance.Status),
@@ -85,7 +114,7 @@ func (r *CloneInstanceRepo) Update(instance *clonepool.CloneInstance) error {
 		UpdatedAt:  instance.UpdatedAt,
 	}
 
-	result := r.db.Model(&models.CloneInstance{}).Where("id = ?", instance.ID).Updates(model)
+	result := db.Model(&models.CloneInstance{}).Where("id = ?", instance.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update clone instance: %w", result.Error)
 	}
@@ -111,14 +140,26 @@ func (r *CloneInstanceRepo) modelsToDomain(models []models.CloneInstance) []*clo
 }
 
 type PullRequestRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewPullRequestRepo(db *gorm.DB) git.PullRequestRepo {
-	return &PullRequestRepo{db: db}
+func NewPullRequestRepo(dbProvider DBProvider) git.PullRequestRepo {
+	return &PullRequestRepo{dbProvider: dbProvider}
+}
+
+func (r *PullRequestRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *PullRequestRepo) Save(pr *git.PullRequest) error {
+	db, err := r.getDB(pr.ProjectName)
+	if err != nil {
+		return err
+	}
+
 	model := &models.PullRequest{
 		ID:             pr.ID,
 		Title:          pr.Title,
@@ -126,7 +167,7 @@ func (r *PullRequestRepo) Save(pr *git.PullRequest) error {
 		SourceBranch:   pr.SourceBranch,
 		TargetBranch:   pr.TargetBranch,
 		Status:         string(pr.Status),
-		ProjectID:      pr.ProjectID,
+		ProjectName:    pr.ProjectName,
 		Author:         pr.Author,
 		GeneratedDesc:  pr.GeneratedDesc,
 		SquashCommitMsg: pr.SquashCommitMsg,
@@ -134,16 +175,21 @@ func (r *PullRequestRepo) Save(pr *git.PullRequest) error {
 		UpdatedAt:      pr.UpdatedAt,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save pull request: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *PullRequestRepo) FindByID(id string) (*git.PullRequest, error) {
+func (r *PullRequestRepo) FindByID(id string, projectName string) (*git.PullRequest, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.PullRequest
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -154,19 +200,29 @@ func (r *PullRequestRepo) FindByID(id string) (*git.PullRequest, error) {
 	return r.modelToDomain(&model), nil
 }
 
-func (r *PullRequestRepo) FindByProjectID(projectID string) ([]*git.PullRequest, error) {
+func (r *PullRequestRepo) FindByProjectName(projectName string) ([]*git.PullRequest, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.PullRequest
-	result := r.db.Where("project_id = ?", projectID).Order("created_at DESC").Find(&models)
+	result := db.Where("project_name = ?", projectName).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find pull requests by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find pull requests by project name: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
 func (r *PullRequestRepo) FindByBranch(sourceBranch string) ([]*git.PullRequest, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.PullRequest
-	result := r.db.Where("source_branch = ?", sourceBranch).Order("created_at DESC").Find(&models)
+	result := db.Where("source_branch = ?", sourceBranch).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find pull requests by source branch: %w", result.Error)
 	}
@@ -175,6 +231,11 @@ func (r *PullRequestRepo) FindByBranch(sourceBranch string) ([]*git.PullRequest,
 }
 
 func (r *PullRequestRepo) Update(pr *git.PullRequest) error {
+	db, err := r.getDB(pr.ProjectName)
+	if err != nil {
+		return err
+	}
+
 	model := &models.PullRequest{
 		ID:             pr.ID,
 		Title:          pr.Title,
@@ -182,7 +243,7 @@ func (r *PullRequestRepo) Update(pr *git.PullRequest) error {
 		SourceBranch:   pr.SourceBranch,
 		TargetBranch:   pr.TargetBranch,
 		Status:         string(pr.Status),
-		ProjectID:      pr.ProjectID,
+		ProjectName:    pr.ProjectName,
 		Author:         pr.Author,
 		GeneratedDesc:  pr.GeneratedDesc,
 		SquashCommitMsg: pr.SquashCommitMsg,
@@ -190,7 +251,7 @@ func (r *PullRequestRepo) Update(pr *git.PullRequest) error {
 		UpdatedAt:      pr.UpdatedAt,
 	}
 
-	result := r.db.Model(&models.PullRequest{}).Where("id = ?", pr.ID).Updates(model)
+	result := db.Model(&models.PullRequest{}).Where("id = ?", pr.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update pull request: %w", result.Error)
 	}
@@ -205,7 +266,7 @@ func (r *PullRequestRepo) modelToDomain(m *models.PullRequest) *git.PullRequest 
 		SourceBranch:   m.SourceBranch,
 		TargetBranch:   m.TargetBranch,
 		Status:         git.PullRequestStatus(m.Status),
-		ProjectID:      m.ProjectID,
+		ProjectName:    m.ProjectName,
 		Author:         m.Author,
 		GeneratedDesc:  m.GeneratedDesc,
 		SquashCommitMsg: m.SquashCommitMsg,

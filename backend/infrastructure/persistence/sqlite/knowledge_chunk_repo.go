@@ -7,19 +7,32 @@ import (
 )
 
 type DocumentChunkRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
+}
+
+func NewDocumentChunkRepo(dbProvider DBProvider) *DocumentChunkRepo {
+	return &DocumentChunkRepo{dbProvider: dbProvider}
+}
+
+func (r *DocumentChunkRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *DocumentChunkRepo) DeleteByDocumentID(documentID string) error {
-	result := r.db.Where("document_id = ?", documentID).Delete(&models.DocumentChunk{})
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+	result := db.Where("document_id = ?", documentID).Delete(&models.DocumentChunk{})
 	return result.Error
 }
 
-func NewDocumentChunkRepo(db *gorm.DB) *DocumentChunkRepo {
-	return &DocumentChunkRepo{db: db}
-}
-
 func (r *DocumentChunkRepo) Save(chunk *knowledge.Chunk) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.DocumentChunk{
 		ID:         chunk.ID,
 		DocumentID: chunk.DocumentID,
@@ -28,16 +41,18 @@ func (r *DocumentChunkRepo) Save(chunk *knowledge.Chunk) error {
 		Embedding:  []float64{},
 	}
 
-	result := r.db.Save(model)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
+	result := db.Save(model)
+	return result.Error
 }
 
 func (r *DocumentChunkRepo) FindByID(id string) (*knowledge.Chunk, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.DocumentChunk
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -49,8 +64,13 @@ func (r *DocumentChunkRepo) FindByID(id string) (*knowledge.Chunk, error) {
 }
 
 func (r *DocumentChunkRepo) FindByDocumentID(documentID string) ([]*knowledge.Chunk, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.DocumentChunk
-	result := r.db.Where("document_id = ?", documentID).Order("chunk_index ASC").Find(&models)
+	result := db.Where("document_id = ?", documentID).Order("chunk_index ASC").Find(&models)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -59,6 +79,11 @@ func (r *DocumentChunkRepo) FindByDocumentID(documentID string) ([]*knowledge.Ch
 }
 
 func (r *DocumentChunkRepo) Update(chunk *knowledge.Chunk) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.DocumentChunk{
 		DocumentID: chunk.DocumentID,
 		Content:    chunk.Content,
@@ -66,15 +91,17 @@ func (r *DocumentChunkRepo) Update(chunk *knowledge.Chunk) error {
 		Embedding:  []float64{},
 	}
 
-	result := r.db.Model(&models.DocumentChunk{}).Where("id = ?", chunk.ID).Updates(model)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
+	result := db.Model(&models.DocumentChunk{}).Where("id = ?", chunk.ID).Updates(model)
+	return result.Error
 }
 
 func (r *DocumentChunkRepo) Delete(id string) error {
-	result := r.db.Delete(&models.DocumentChunk{}, "id = ?", id)
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.DocumentChunk{}, "id = ?", id)
 	return result.Error
 }
 
@@ -96,11 +123,23 @@ func (r *DocumentChunkRepo) modelsToDomain(models []models.DocumentChunk) []*kno
 }
 
 type DocumentIndexRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
+}
+
+func NewDocumentIndexRepo(dbProvider DBProvider) *DocumentIndexRepo {
+	return &DocumentIndexRepo{dbProvider: dbProvider}
+}
+
+func (r *DocumentIndexRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *DocumentIndexRepo) DeleteByDocumentID(documentID string) error {
-	result := r.db.Where("document_id = ?", documentID).Delete(&models.DocumentIndex{})
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+	result := db.Where("document_id = ?", documentID).Delete(&models.DocumentIndex{})
 	return result.Error
 }
 
@@ -108,11 +147,12 @@ func (r *DocumentIndexRepo) Search(query *knowledge.SearchQuery) ([]*knowledge.S
 	return []*knowledge.SearchResult{}, nil
 }
 
-func NewDocumentIndexRepo(db *gorm.DB) *DocumentIndexRepo {
-	return &DocumentIndexRepo{db: db}
-}
-
 func (r *DocumentIndexRepo) Save(index *knowledge.DocumentIndex) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.DocumentIndex{
 		ID:         index.ID,
 		DocumentID: index.DocumentID,
@@ -120,16 +160,18 @@ func (r *DocumentIndexRepo) Save(index *knowledge.DocumentIndex) error {
 		IndexData:  models.JSONMap{},
 	}
 
-	result := r.db.Save(model)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
+	result := db.Save(model)
+	return result.Error
 }
 
 func (r *DocumentIndexRepo) FindByID(id string) (*knowledge.DocumentIndex, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.DocumentIndex
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -141,8 +183,13 @@ func (r *DocumentIndexRepo) FindByID(id string) (*knowledge.DocumentIndex, error
 }
 
 func (r *DocumentIndexRepo) FindByDocumentID(documentID string) ([]*knowledge.DocumentIndex, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.DocumentIndex
-	result := r.db.Where("document_id = ?", documentID).Find(&models)
+	result := db.Where("document_id = ?", documentID).Find(&models)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -151,28 +198,35 @@ func (r *DocumentIndexRepo) FindByDocumentID(documentID string) ([]*knowledge.Do
 }
 
 func (r *DocumentIndexRepo) Update(index *knowledge.DocumentIndex) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.DocumentIndex{
 		DocumentID: index.DocumentID,
 	}
 
-	result := r.db.Model(&models.DocumentIndex{}).Where("id = ?", index.ID).Updates(model)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
+	result := db.Model(&models.DocumentIndex{}).Where("id = ?", index.ID).Updates(model)
+	return result.Error
 }
 
 func (r *DocumentIndexRepo) Delete(id string) error {
-	result := r.db.Delete(&models.DocumentIndex{}, "id = ?", id)
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.DocumentIndex{}, "id = ?", id)
 	return result.Error
 }
 
 func (r *DocumentIndexRepo) modelToDomain(m *models.DocumentIndex) *knowledge.DocumentIndex {
 	return &knowledge.DocumentIndex{
-		ID:         m.ID,
+		ID:        m.ID,
 		DocumentID: m.DocumentID,
-		ChunkID:    "",
-		Embedding:  []float64{},
+		ChunkID:   "",
+		Embedding: []float64{},
 	}
 }
 

@@ -23,22 +23,22 @@ func (rt RuleType) IsValid() bool {
 }
 
 type DevStandard struct {
-	ID          string    `json:"id"`
-	ProjectID   string    `json:"project_id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	RuleType    RuleType  `json:"rule_type"`
-	Rule        string    `json:"rule"`
-	Enabled     bool      `json:"enabled"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID           string    `json:"id"`
+	ProjectName  string    `json:"project_name"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description,omitempty"`
+	RuleType     RuleType  `json:"rule_type"`
+	Rule         string    `json:"rule"`
+	Enabled      bool      `json:"enabled"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-func NewDevStandard(id, projectID, name, description string, ruleType RuleType, rule string, enabled bool) *DevStandard {
+func NewDevStandard(id, projectName, name, description string, ruleType RuleType, rule string, enabled bool) *DevStandard {
 	now := time.Now().UTC()
 	return &DevStandard{
 		ID:          id,
-		ProjectID:   projectID,
+		ProjectName: projectName,
 		Name:        name,
 		Description: description,
 		RuleType:    ruleType,
@@ -50,8 +50,8 @@ func NewDevStandard(id, projectID, name, description string, ruleType RuleType, 
 }
 
 func (ds *DevStandard) Validate() error {
-	if ds.ProjectID == "" {
-		return fmt.Errorf("project_id is required")
+	if ds.ProjectName == "" {
+		return fmt.Errorf("project_name is required")
 	}
 	if ds.Name == "" {
 		return fmt.Errorf("name is required")
@@ -66,20 +66,20 @@ func (ds *DevStandard) Validate() error {
 }
 
 type BranchPolicyConfig struct {
-	ID          string    `json:"id"`
-	ProjectID   string    `json:"project_id"`
-	Pattern     string    `json:"pattern"`
-	Description string    `json:"description,omitempty"`
-	IsDefault   bool      `json:"is_default"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID           string    `json:"id"`
+	ProjectName  string    `json:"project_name"`
+	Pattern      string    `json:"pattern"`
+	Description  string    `json:"description,omitempty"`
+	IsDefault    bool      `json:"is_default"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-func NewBranchPolicyConfig(id, projectID, pattern, description string, isDefault bool) *BranchPolicyConfig {
+func NewBranchPolicyConfig(id, projectName, pattern, description string, isDefault bool) *BranchPolicyConfig {
 	now := time.Now().UTC()
 	return &BranchPolicyConfig{
 		ID:          id,
-		ProjectID:   projectID,
+		ProjectName: projectName,
 		Pattern:     pattern,
 		Description: description,
 		IsDefault:   isDefault,
@@ -89,8 +89,8 @@ func NewBranchPolicyConfig(id, projectID, pattern, description string, isDefault
 }
 
 func (bpc *BranchPolicyConfig) Validate() error {
-	if bpc.ProjectID == "" {
-		return fmt.Errorf("project_id is required")
+	if bpc.ProjectName == "" {
+		return fmt.Errorf("project_name is required")
 	}
 	if bpc.Pattern == "" {
 		return fmt.Errorf("pattern is required")

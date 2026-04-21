@@ -7,24 +7,23 @@ import (
 )
 
 type Task struct {
-	ID          string         `gorm:"type:varchar(36);primaryKey" json:"id"`
-	Name        string         `gorm:"type:varchar(255);not null;index" json:"name"`
-	Description string         `gorm:"type:text" json:"description"`
-	AgentType   string         `gorm:"type:varchar(50);not null;index" json:"agent_type"`
-	TaskType    string         `gorm:"type:varchar(100);not null" json:"task_type"`
-	Status      string         `gorm:"type:varchar(50);not null;default:'PENDING';index" json:"status"`
-	Priority    int            `gorm:"not null;default:5;index" json:"priority"`
-	AssignedTo  string         `gorm:"type:varchar(36);index" json:"assigned_to"`
-	PipelineID  string         `gorm:"type:varchar(36);index" json:"pipeline_id"`
-	ProjectID   string         `gorm:"type:varchar(36);not null;index:idx_task_project" json:"project_id"`
-	CreatedAt   time.Time      `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt   time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
-	StartedAt   *time.Time     `json:"started_at"`
-	CompletedAt *time.Time     `json:"completed_at"`
-	Context     JSONMap        `gorm:"type:json" json:"context,omitempty"`
+	ID           string         `gorm:"type:varchar(36);primaryKey" json:"id"`
+	Name         string         `gorm:"type:varchar(255);not null;index" json:"name"`
+	Description  string         `gorm:"type:text" json:"description"`
+	AgentType    string         `gorm:"type:varchar(50);not null;index" json:"agent_type"`
+	TaskType     string         `gorm:"type:varchar(100);not null" json:"task_type"`
+	Status       string         `gorm:"type:varchar(50);not null;default:'PENDING';index" json:"status"`
+	Priority     int            `gorm:"not null;default:5;index" json:"priority"`
+	AssignedTo   string         `gorm:"type:varchar(36);index" json:"assigned_to"`
+	PipelineID   string         `gorm:"type:varchar(36);index" json:"pipeline_id"`
+	ProjectName  string         `gorm:"type:varchar(255);not null;index:idx_task_project" json:"project_name"`
+	CreatedAt    time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	StartedAt    *time.Time     `json:"started_at"`
+	CompletedAt  *time.Time     `json:"completed_at"`
+	Context      JSONMap        `gorm:"type:json" json:"context,omitempty"`
 
-	Project         *Project         `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
 	Pipeline        *Pipeline        `gorm:"foreignKey:PipelineID" json:"pipeline,omitempty"`
 	AgentExecutions []AgentExecution `gorm:"foreignKey:TaskID" json:"agent_executions,omitempty"`
 }

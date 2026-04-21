@@ -28,10 +28,10 @@ func NewKnowledgeService(
 	}
 }
 
-func (s *KnowledgeService) UploadDocument(name, path, projectID, directoryID, content string) (*knowledge.Document, error) {
-	doc := knowledge.NewDocument(uid.NewID(), name, path, projectID)
+func (s *KnowledgeService) UploadDocument(name, path, projectName, directoryID, content string) (*knowledge.Document, error) {
+	doc := knowledge.NewDocument(uid.NewID(), name, path, projectName)
 	if directoryID != "" {
-		dir, err := s.dirRepo.FindByID(directoryID)
+		dir, err := s.dirRepo.FindByID(directoryID, projectName)
 		if err != nil {
 			return nil, err
 		}
@@ -53,11 +53,11 @@ func (s *KnowledgeService) UploadDocument(name, path, projectID, directoryID, co
 }
 
 func (s *KnowledgeService) BatchUploadDocuments(docs []struct {
-	Name, Path, ProjectID, DirectoryID, Content string
+	Name, Path, ProjectName, DirectoryID, Content string
 }) ([]*knowledge.Document, error) {
 	var results []*knowledge.Document
 	for _, d := range docs {
-		doc, err := s.UploadDocument(d.Name, d.Path, d.ProjectID, d.DirectoryID, d.Content)
+		doc, err := s.UploadDocument(d.Name, d.Path, d.ProjectName, d.DirectoryID, d.Content)
 		if err != nil {
 			return nil, fmt.Errorf("failed to upload document %s: %w", d.Name, err)
 		}
@@ -66,20 +66,20 @@ func (s *KnowledgeService) BatchUploadDocuments(docs []struct {
 	return results, nil
 }
 
-func (s *KnowledgeService) GetDocument(id string) (*knowledge.Document, error) {
-	return s.docRepo.FindByID(id)
+func (s *KnowledgeService) GetDocument(id, projectName string) (*knowledge.Document, error) {
+	return s.docRepo.FindByID(id, projectName)
 }
 
-func (s *KnowledgeService) ListDocuments(projectID string) ([]*knowledge.Document, error) {
-	return s.docRepo.FindByProjectID(projectID)
+func (s *KnowledgeService) ListDocuments(projectName string) ([]*knowledge.Document, error) {
+	return s.docRepo.FindByProjectName(projectName)
 }
 
 func (s *KnowledgeService) ListDocumentsByDirectory(directoryID string) ([]*knowledge.Document, error) {
 	return s.docRepo.FindByDirectoryID(directoryID)
 }
 
-func (s *KnowledgeService) DeleteDocument(id string) error {
-	doc, err := s.docRepo.FindByID(id)
+func (s *KnowledgeService) DeleteDocument(id, projectName string) error {
+	doc, err := s.docRepo.FindByID(id, projectName)
 	if err != nil {
 		return err
 	}
@@ -88,12 +88,12 @@ func (s *KnowledgeService) DeleteDocument(id string) error {
 	}
 	_ = s.chunkRepo.DeleteByDocumentID(id)
 	_ = s.indexRepo.DeleteByDocumentID(id)
-	return s.docRepo.Delete(id)
+	return s.docRepo.Delete(id, projectName)
 }
 
-func (s *KnowledgeService) CreateDirectory(name, parentID, projectID string) (*knowledge.Directory, error) {
+func (s *KnowledgeService) CreateDirectory(name, parentID, projectName string) (*knowledge.Directory, error) {
 	if parentID != "" {
-		parent, err := s.dirRepo.FindByID(parentID)
+		parent, err := s.dirRepo.FindByID(parentID, projectName)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +101,7 @@ func (s *KnowledgeService) CreateDirectory(name, parentID, projectID string) (*k
 			return nil, fmt.Errorf("parent directory not found: %s", parentID)
 		}
 	}
-	dir := knowledge.NewDirectory(uid.NewID(), name, parentID, projectID)
+	dir := knowledge.NewDirectory(uid.NewID(), name, parentID, projectName)
 	if err := dir.Validate(); err != nil {
 		return nil, err
 	}
@@ -111,28 +111,28 @@ func (s *KnowledgeService) CreateDirectory(name, parentID, projectID string) (*k
 	return dir, nil
 }
 
-func (s *KnowledgeService) GetDirectory(id string) (*knowledge.Directory, error) {
-	return s.dirRepo.FindByID(id)
+func (s *KnowledgeService) GetDirectory(id, projectName string) (*knowledge.Directory, error) {
+	return s.dirRepo.FindByID(id, projectName)
 }
 
-func (s *KnowledgeService) ListDirectories(projectID string) ([]*knowledge.Directory, error) {
-	return s.dirRepo.FindByProjectID(projectID)
+func (s *KnowledgeService) ListDirectories(projectName string) ([]*knowledge.Directory, error) {
+	return s.dirRepo.FindByProjectName(projectName)
 }
 
 func (s *KnowledgeService) ListSubDirectories(parentID string) ([]*knowledge.Directory, error) {
 	return s.dirRepo.FindByParentID(parentID)
 }
 
-func (s *KnowledgeService) DeleteDirectory(id string) error {
+func (s *KnowledgeService) DeleteDirectory(id, projectName string) error {
 	docs, _ := s.docRepo.FindByDirectoryID(id)
 	for _, doc := range docs {
-		_ = s.DeleteDocument(doc.ID)
+		_ = s.DeleteDocument(doc.ID, projectName)
 	}
 	subs, _ := s.dirRepo.FindByParentID(id)
 	for _, sub := range subs {
-		_ = s.DeleteDirectory(sub.ID)
+		_ = s.DeleteDirectory(sub.ID, projectName)
 	}
-	return s.dirRepo.Delete(id)
+	return s.dirRepo.Delete(id, projectName)
 }
 
 func (s *KnowledgeService) Search(query *knowledge.SearchQuery) ([]*knowledge.SearchResult, error) {

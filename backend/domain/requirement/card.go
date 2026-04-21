@@ -31,24 +31,24 @@ type Card struct {
 	Priority         Priority   `json:"priority"`
 	StructuredOutput string     `json:"structured_output,omitempty"`
 	PipelineID       string     `json:"pipeline_id,omitempty"`
-	ProjectID        string     `json:"project_id"`
+	ProjectName      string     `json:"project_name"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
 	SupersededBy     string     `json:"superseded_by,omitempty"`
 }
 
-func NewCard(id, title, description, original, projectID string) *Card {
+func NewCard(id, title, description, original, projectName string) *Card {
 	now := time.Now().UTC()
 	return &Card{
-		ID:          id,
-		Title:       title,
-		Description: description,
-		Original:    original,
-		Status:      CardDraft,
-		Priority:    PriorityMedium,
-		ProjectID:   projectID,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:           id,
+		Title:        title,
+		Description:  description,
+		Original:     original,
+		Status:       CardDraft,
+		Priority:     PriorityMedium,
+		ProjectName:  projectName,
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 }
 

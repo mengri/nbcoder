@@ -9,14 +9,26 @@ import (
 )
 
 type CardRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewCardRepo(db *gorm.DB) requirement.CardRepo {
-	return &CardRepo{db: db}
+func NewCardRepo(dbProvider DBProvider) requirement.CardRepo {
+	return &CardRepo{dbProvider: dbProvider}
+}
+
+func (r *CardRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *CardRepo) Save(c *requirement.Card) error {
+	db, err := r.getDB(c.ProjectName)
+	if err != nil {
+		return err
+	}
+
 	model := &models.Card{
 		ID:               c.ID,
 		Title:            c.Title,
@@ -26,22 +38,27 @@ func (r *CardRepo) Save(c *requirement.Card) error {
 		Priority:         string(c.Priority),
 		StructuredOutput: c.StructuredOutput,
 		PipelineID:       c.PipelineID,
-		ProjectID:        c.ProjectID,
+		ProjectName:      c.ProjectName,
 		CreatedAt:        c.CreatedAt,
 		UpdatedAt:        c.UpdatedAt,
 		SupersededBy:     c.SupersededBy,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save card: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *CardRepo) FindByID(id string) (*requirement.Card, error) {
+func (r *CardRepo) FindByID(id string, projectName string) (*requirement.Card, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Card
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -53,8 +70,13 @@ func (r *CardRepo) FindByID(id string) (*requirement.Card, error) {
 }
 
 func (r *CardRepo) FindAll() ([]*requirement.Card, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Card
-	result := r.db.Find(&models)
+	result := db.Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find all cards: %w", result.Error)
 	}
@@ -63,6 +85,11 @@ func (r *CardRepo) FindAll() ([]*requirement.Card, error) {
 }
 
 func (r *CardRepo) Update(c *requirement.Card) error {
+	db, err := r.getDB(c.ProjectName)
+	if err != nil {
+		return err
+	}
+
 	model := &models.Card{
 		ID:               c.ID,
 		Title:            c.Title,
@@ -72,40 +99,55 @@ func (r *CardRepo) Update(c *requirement.Card) error {
 		Priority:         string(c.Priority),
 		StructuredOutput: c.StructuredOutput,
 		PipelineID:       c.PipelineID,
-		ProjectID:        c.ProjectID,
+		ProjectName:      c.ProjectName,
 		CreatedAt:        c.CreatedAt,
 		UpdatedAt:        c.UpdatedAt,
 		SupersededBy:     c.SupersededBy,
 	}
 
-	result := r.db.Model(&models.Card{}).Where("id = ?", c.ID).Updates(model)
+	result := db.Model(&models.Card{}).Where("id = ?", c.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update card: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *CardRepo) Delete(id string) error {
-	result := r.db.Delete(&models.Card{}, "id = ?", id)
+func (r *CardRepo) Delete(id string, projectName string) error {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.Card{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete card: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *CardRepo) FindByProjectID(projectID string) ([]*requirement.Card, error) {
+func (r *CardRepo) FindByProjectName(projectName string) ([]*requirement.Card, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Card
-	result := r.db.Where("project_id = ?", projectID).Order("created_at DESC").Find(&models)
+	result := db.Where("project_name = ?", projectName).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find cards by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find cards by project name: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
 func (r *CardRepo) FindByStatus(status requirement.CardStatus) ([]*requirement.Card, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Card
-	result := r.db.Where("status = ?", string(status)).Order("created_at DESC").Find(&models)
+	result := db.Where("status = ?", string(status)).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find cards by status: %w", result.Error)
 	}
@@ -114,8 +156,13 @@ func (r *CardRepo) FindByStatus(status requirement.CardStatus) ([]*requirement.C
 }
 
 func (r *CardRepo) FindByPriority(priority string) ([]*requirement.Card, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Card
-	result := r.db.Where("priority = ?", priority).Order("created_at DESC").Find(&models)
+	result := db.Where("priority = ?", priority).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find cards by priority: %w", result.Error)
 	}
@@ -124,8 +171,13 @@ func (r *CardRepo) FindByPriority(priority string) ([]*requirement.Card, error) 
 }
 
 func (r *CardRepo) FindByPipelineID(pipelineID string) (*requirement.Card, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Card
-	result := r.db.Where("pipeline_id = ?", pipelineID).First(&model)
+	result := db.Where("pipeline_id = ?", pipelineID).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -146,7 +198,7 @@ func (r *CardRepo) modelToDomain(m *models.Card) *requirement.Card {
 		Priority:         requirement.Priority(m.Priority),
 		StructuredOutput: m.StructuredOutput,
 		PipelineID:       m.PipelineID,
-		ProjectID:        m.ProjectID,
+		ProjectName:      m.ProjectName,
 		CreatedAt:        m.CreatedAt,
 		UpdatedAt:        m.UpdatedAt,
 		SupersededBy:     m.SupersededBy,

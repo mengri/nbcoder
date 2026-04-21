@@ -48,7 +48,7 @@ func (r *InMemoryProjectConfigRepo) FindByKey(projectID, key string) (*project.P
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, c := range r.configs {
-		if c.ProjectID == projectID && c.Key == key {
+		if c.ProjectName == projectID && c.Key == key {
 			return c, nil
 		}
 	}
@@ -60,7 +60,7 @@ func (r *InMemoryProjectConfigRepo) FindByProjectID(projectID string) ([]*projec
 	defer r.mu.RUnlock()
 	var result []*project.ProjectConfig
 	for _, c := range r.configs {
-		if c.ProjectID == projectID {
+		if c.ProjectName == projectID {
 			result = append(result, c)
 		}
 	}
@@ -103,7 +103,7 @@ func (r *InMemoryStandardsRepo) FindByProjectID(projectID string) (*project.Stan
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, s := range r.standards {
-		if s.ProjectID == projectID {
+		if s.ProjectName == projectID {
 			return s, nil
 		}
 	}
@@ -140,7 +140,7 @@ func (r *InMemoryDevStandardRepo) FindByProjectID(projectID string) ([]*project.
 	defer r.mu.RUnlock()
 	var result []*project.DevStandard
 	for _, s := range r.standards {
-		if s.ProjectID == projectID {
+		if s.ProjectName == projectID {
 			result = append(result, s)
 		}
 	}
@@ -194,7 +194,7 @@ func (r *InMemoryBranchPolicyConfigRepo) FindByProjectID(projectID string) ([]*p
 	defer r.mu.RUnlock()
 	var result []*project.BranchPolicyConfig
 	for _, c := range r.configs {
-		if c.ProjectID == projectID {
+		if c.ProjectName == projectID {
 			result = append(result, c)
 		}
 	}
@@ -247,7 +247,7 @@ func (r *InMemoryProjectLifecycleRepo) FindByProjectID(projectID string) (*proje
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, l := range r.lifecycles {
-		if l.ProjectID == projectID {
+		if l.ProjectName == projectID {
 			return l, nil
 		}
 	}

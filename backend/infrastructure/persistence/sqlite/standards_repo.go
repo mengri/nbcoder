@@ -9,17 +9,29 @@ import (
 )
 
 type StandardsRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewStandardsRepo(db *gorm.DB) project.StandardsRepo {
-	return &StandardsRepo{db: db}
+func NewStandardsRepo(dbProvider DBProvider) project.StandardsRepo {
+	return &StandardsRepo{dbProvider: dbProvider}
+}
+
+func (r *StandardsRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *StandardsRepo) Save(s *project.Standards) error {
+	db, err := r.getDB(s.ProjectName)
+	if err != nil {
+		return err
+	}
+
 	model := &models.Standards{
 		ID:                s.ID,
-		ProjectID:         s.ProjectID,
+		ProjectName:       s.ProjectName,
 		BranchStrategy:    s.BranchStrategy,
 		TechStack:         s.TechStack,
 		CodingConventions: s.CodingConventions,
@@ -27,30 +39,40 @@ func (r *StandardsRepo) Save(s *project.Standards) error {
 		UpdatedAt:         s.UpdatedAt,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save standards: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *StandardsRepo) FindByProjectID(projectID string) (*project.Standards, error) {
+func (r *StandardsRepo) FindByProjectName(projectName string) (*project.Standards, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Standards
-	result := r.db.Where("project_id = ?", projectID).First(&model)
+	result := db.Where("project_name = ?", projectName).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to find standards by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find standards by project name: %w", result.Error)
 	}
 
 	return r.modelToDomain(&model), nil
 }
 
 func (r *StandardsRepo) Update(s *project.Standards) error {
+	db, err := r.getDB(s.ProjectName)
+	if err != nil {
+		return err
+	}
+
 	model := &models.Standards{
 		ID:                s.ID,
-		ProjectID:         s.ProjectID,
+		ProjectName:       s.ProjectName,
 		BranchStrategy:    s.BranchStrategy,
 		TechStack:         s.TechStack,
 		CodingConventions: s.CodingConventions,
@@ -58,7 +80,7 @@ func (r *StandardsRepo) Update(s *project.Standards) error {
 		UpdatedAt:         s.UpdatedAt,
 	}
 
-	result := r.db.Model(&models.Standards{}).Where("id = ?", s.ID).Updates(model)
+	result := db.Model(&models.Standards{}).Where("id = ?", s.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update standards: %w", result.Error)
 	}
@@ -68,7 +90,7 @@ func (r *StandardsRepo) Update(s *project.Standards) error {
 func (r *StandardsRepo) modelToDomain(m *models.Standards) *project.Standards {
 	return &project.Standards{
 		ID:                m.ID,
-		ProjectID:         m.ProjectID,
+		ProjectName:       m.ProjectName,
 		BranchStrategy:    m.BranchStrategy,
 		TechStack:         m.TechStack,
 		CodingConventions: m.CodingConventions,

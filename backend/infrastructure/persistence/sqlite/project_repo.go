@@ -1,125 +1,154 @@
 package sqlite
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/mengri/nbcoder/domain/project"
-	"github.com/mengri/nbcoder/infrastructure/database/models"
-	"gorm.io/gorm"
 )
 
 type ProjectRepo struct {
-	db *gorm.DB
+	dbProvider     DBProvider
+	projectBaseDir string
 }
 
-func NewProjectRepo(db *gorm.DB) project.ProjectRepo {
-	return &ProjectRepo{db: db}
+func NewProjectRepo(dbProvider DBProvider, projectBaseDir string) project.ProjectRepo {
+	return &ProjectRepo{
+		dbProvider:     dbProvider,
+		projectBaseDir: projectBaseDir,
+	}
+}
+
+type ProjectConfigFile struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	RepoURL     string          `json:"repo_url,omitempty"`
+	Status      string          `json:"status"`
+	CreatedAt   string          `json:"created_at"`
+	UpdatedAt   string          `json:"updated_at"`
 }
 
 func (r *ProjectRepo) Save(p *project.Project) error {
-	model := &models.Project{
-		ID:          p.ID,
+	projectDir := filepath.Join(r.projectBaseDir, p.Name)
+	if err := os.MkdirAll(projectDir, 0755); err != nil {
+		return fmt.Errorf("failed to create project directory: %w", err)
+	}
+
+	configPath := filepath.Join(projectDir, ".nbcoder", "project.json")
+	configDir := filepath.Dir(configPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	config := ProjectConfigFile{
 		Name:        p.Name,
 		Description: p.Description,
 		RepoURL:     p.RepoURL,
 		Status:      string(p.Status),
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
+		CreatedAt:   p.CreatedAt.UTC().Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:   p.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z"),
 	}
 
-	result := r.db.Save(model)
-	if result.Error != nil {
-		return fmt.Errorf("failed to save project: %w", result.Error)
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal project config: %w", err)
 	}
+
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write project config: %w", err)
+	}
+
 	return nil
 }
 
-func (r *ProjectRepo) FindByID(id string) (*project.Project, error) {
-	var model models.Project
-	result := r.db.First(&model, "id = ?", id)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
+func (r *ProjectRepo) FindByName(name string) (*project.Project, error) {
+	configPath := filepath.Join(r.projectBaseDir, name, ".nbcoder", "project.json")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to find project by id: %w", result.Error)
+		return nil, fmt.Errorf("failed to read project config: %w", err)
 	}
 
-	return r.modelToDomain(&model), nil
+	var config ProjectConfigFile
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal project config: %w", err)
+	}
+
+	return r.configToDomain(&config), nil
 }
 
 func (r *ProjectRepo) FindAll() ([]*project.Project, error) {
-	var models []models.Project
-	result := r.db.Find(&models)
-	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find all projects: %w", result.Error)
+	entries, err := os.ReadDir(r.projectBaseDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read projects directory: %w", err)
 	}
 
-	return r.modelsToDomain(models), nil
+	var projects []*project.Project
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		p, err := r.FindByName(entry.Name())
+		if err != nil {
+			continue
+		}
+		if p != nil {
+			projects = append(projects, p)
+		}
+	}
+
+	return projects, nil
 }
 
 func (r *ProjectRepo) Update(p *project.Project) error {
-	model := &models.Project{
-		ID:          p.ID,
-		Name:        p.Name,
-		Description: p.Description,
-		RepoURL:     p.RepoURL,
-		Status:      string(p.Status),
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
-	}
-
-	result := r.db.Model(&models.Project{}).Where("id = ?", p.ID).Updates(model)
-	if result.Error != nil {
-		return fmt.Errorf("failed to update project: %w", result.Error)
-	}
-	return nil
+	return r.Save(p)
 }
 
-func (r *ProjectRepo) Delete(id string) error {
-	result := r.db.Delete(&models.Project{}, "id = ?", id)
-	if result.Error != nil {
-		return fmt.Errorf("failed to delete project: %w", result.Error)
+func (r *ProjectRepo) Delete(name string) error {
+	projectDir := filepath.Join(r.projectBaseDir, name)
+	if err := os.RemoveAll(projectDir); err != nil {
+		return fmt.Errorf("failed to delete project directory: %w", err)
 	}
 	return nil
 }
 
 func (r *ProjectRepo) FindByStatus(status project.ProjectStatus) ([]*project.Project, error) {
-	var models []models.Project
-	result := r.db.Where("status = ?", status).Find(&models)
-	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find projects by status: %w", result.Error)
+	projects, err := r.FindAll()
+	if err != nil {
+		return nil, err
 	}
-	return r.modelsToDomain(models), nil
-}
 
-func (r *ProjectRepo) FindByName(name string) (*project.Project, error) {
-	var model models.Project
-	result := r.db.Where("name = ?", name).First(&model)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, nil
+	var result []*project.Project
+	for _, p := range projects {
+		if p.Status == status {
+			result = append(result, p)
 		}
-		return nil, fmt.Errorf("failed to find project by name: %w", result.Error)
 	}
-	return r.modelToDomain(&model), nil
+
+	return result, nil
 }
 
-func (r *ProjectRepo) modelToDomain(m *models.Project) *project.Project {
+func (r *ProjectRepo) configToDomain(c *ProjectConfigFile) *project.Project {
 	return &project.Project{
-		ID:          m.ID,
-		Name:        m.Name,
-		Description: m.Description,
-		RepoURL:     m.RepoURL,
-		Status:      project.ProjectStatus(m.Status),
-		CreatedAt:   m.CreatedAt,
-		UpdatedAt:   m.UpdatedAt,
+		Name:        c.Name,
+		Description: c.Description,
+		RepoURL:     c.RepoURL,
+		Status:      project.ProjectStatus(c.Status),
+		CreatedAt:   parseTime(c.CreatedAt),
+		UpdatedAt:   parseTime(c.UpdatedAt),
 	}
 }
 
-func (r *ProjectRepo) modelsToDomain(models []models.Project) []*project.Project {
-	result := make([]*project.Project, len(models))
-	for i, m := range models {
-		result[i] = r.modelToDomain(&m)
+func parseTime(s string) time.Time {
+	t, err := time.Parse("2006-01-02T15:04:05Z", s)
+	if err != nil {
+		return time.Time{}
 	}
-	return result
+	return t
 }

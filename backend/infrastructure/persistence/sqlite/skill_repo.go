@@ -9,14 +9,23 @@ import (
 )
 
 type SkillRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewSkillRepo(db *gorm.DB) agent.SkillRepo {
-	return &SkillRepo{db: db}
+func NewSkillRepo(dbProvider DBProvider) agent.SkillRepo {
+	return &SkillRepo{dbProvider: dbProvider}
+}
+
+func (r *SkillRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *SkillRepo) Save(skill *agent.Skill) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.Skill{
 		ID:          skill.ID,
 		Name:        skill.Name,
@@ -27,7 +36,7 @@ func (r *SkillRepo) Save(skill *agent.Skill) error {
 		UpdatedAt:   skill.UpdatedAt,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save skill: %w", result.Error)
 	}
@@ -35,8 +44,13 @@ func (r *SkillRepo) Save(skill *agent.Skill) error {
 }
 
 func (r *SkillRepo) FindByID(id string) (*agent.Skill, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Skill
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -48,8 +62,13 @@ func (r *SkillRepo) FindByID(id string) (*agent.Skill, error) {
 }
 
 func (r *SkillRepo) FindByAgentType(agentType agent.AgentType) ([]*agent.Skill, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Skill
-	result := r.db.Where("agent_type = ?", string(agentType)).Find(&models)
+	result := db.Where("agent_type = ?", string(agentType)).Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find skills by agent type: %w", result.Error)
 	}
@@ -58,8 +77,13 @@ func (r *SkillRepo) FindByAgentType(agentType agent.AgentType) ([]*agent.Skill, 
 }
 
 func (r *SkillRepo) FindAll() ([]*agent.Skill, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Skill
-	result := r.db.Find(&models)
+	result := db.Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find all skills: %w", result.Error)
 	}
@@ -68,6 +92,11 @@ func (r *SkillRepo) FindAll() ([]*agent.Skill, error) {
 }
 
 func (r *SkillRepo) Update(skill *agent.Skill) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.Skill{
 		ID:          skill.ID,
 		Name:        skill.Name,
@@ -78,7 +107,7 @@ func (r *SkillRepo) Update(skill *agent.Skill) error {
 		UpdatedAt:   skill.UpdatedAt,
 	}
 
-	result := r.db.Model(&models.Skill{}).Where("id = ?", skill.ID).Updates(model)
+	result := db.Model(&models.Skill{}).Where("id = ?", skill.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update skill: %w", result.Error)
 	}
@@ -86,7 +115,12 @@ func (r *SkillRepo) Update(skill *agent.Skill) error {
 }
 
 func (r *SkillRepo) Delete(id string) error {
-	result := r.db.Delete(&models.Skill{}, "id = ?", id)
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.Skill{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete skill: %w", result.Error)
 	}
@@ -94,8 +128,13 @@ func (r *SkillRepo) Delete(id string) error {
 }
 
 func (r *SkillRepo) FindByName(name string) (*agent.Skill, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Skill
-	result := r.db.Where("name = ?", name).First(&model)
+	result := db.Where("name = ?", name).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil

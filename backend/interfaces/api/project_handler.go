@@ -1,13 +1,11 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/mengri/nbcoder/application/dto"
 	projectApp "github.com/mengri/nbcoder/application/project"
 	"github.com/mengri/nbcoder/domain/project"
-	"github.com/mengri/nbcoder/pkg/uid"
+	"github.com/mengri/nbcoder/pkg/response"
 )
 
 type ProjectHandler struct {
@@ -26,43 +24,42 @@ func (h *ProjectHandler) RegisterRoutes(router *gin.RouterGroup) {
 		projects.POST("", h.CreateProject)
 		projects.POST("/init", h.InitProject)
 		projects.GET("", h.ListProjects)
-		projects.GET("/:id", h.GetProject)
-		projects.PUT("/:id", h.UpdateProject)
-		projects.DELETE("/:id", h.DeleteProject)
-		projects.POST("/:id/archive", h.ArchiveProject)
-		projects.POST("/:id/activate", h.ActivateProject)
-		projects.GET("/:id/configs", h.GetConfigs)
-		projects.PUT("/:id/configs", h.SetConfig)
-		projects.GET("/:id/configs/history", h.GetConfigHistory)
-		projects.GET("/:id/standards", h.GetStandards)
-		projects.PUT("/:id/standards", h.UpdateStandards)
+		projects.GET("/:name", h.GetProject)
+		projects.PUT("/:name", h.UpdateProject)
+		projects.DELETE("/:name", h.DeleteProject)
+		projects.POST("/:name/archive", h.ArchiveProject)
+		projects.POST("/:name/activate", h.ActivateProject)
+		projects.GET("/:name/configs", h.GetConfigs)
+		projects.PUT("/:name/configs", h.SetConfig)
+		projects.GET("/:name/configs/history", h.GetConfigHistory)
+		projects.GET("/:name/standards", h.GetStandards)
+		projects.PUT("/:name/standards", h.UpdateStandards)
 	}
 }
 
 func (h *ProjectHandler) CreateProject(c *gin.Context) {
 	var req dto.CreateProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	id := uid.NewID()
-	project, err := h.projectService.CreateProject(id, req.Name, req.Description, req.RepoURL)
+	project, err := h.projectService.CreateProject(req.Name, req.Description, req.RepoURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "创建项目失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, toProjectResponse(project))
+	response.Created(c, toProjectResponse(project))
 }
 
 func (h *ProjectHandler) InitProject(c *gin.Context) {
 	var req dto.CreateProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	result, err := h.projectService.InitProject(req.Name, req.Description, req.RepoURL, req.BranchStrategy, req.TechStack, req.CodingConventions)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "初始化项目失败："+err.Error())
 		return
 	}
 	resp := dto.InitProjectResponse{
@@ -80,122 +77,122 @@ func (h *ProjectHandler) InitProject(c *gin.Context) {
 			CodingConventions: result.Standards.CodingConventions,
 		}
 	}
-	c.JSON(http.StatusCreated, resp)
+	response.Created(c, resp)
 }
 
 func (h *ProjectHandler) GetProject(c *gin.Context) {
-	id := c.Param("id")
-	project, err := h.projectService.GetProject(id)
+	name := c.Param("name")
+	project, err := h.projectService.GetProject(name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取项目失败："+err.Error())
 		return
 	}
 	if project == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+		response.NotFound(c, "项目不存在")
 		return
 	}
-	c.JSON(http.StatusOK, toProjectResponse(project))
+	response.Success(c, toProjectResponse(project))
 }
 
 func (h *ProjectHandler) ListProjects(c *gin.Context) {
 	projects, err := h.projectService.ListProjects()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取项目列表失败："+err.Error())
 		return
 	}
 	result := make([]dto.ProjectResponse, 0, len(projects))
 	for _, p := range projects {
 		result = append(result, toProjectResponse(p))
 	}
-	c.JSON(http.StatusOK, result)
+	response.Success(c, result)
 }
 
 func (h *ProjectHandler) UpdateProject(c *gin.Context) {
-	id := c.Param("id")
+	name := c.Param("name")
 	var req dto.CreateProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	project, err := h.projectService.UpdateProject(id, req.Name, req.Description, req.RepoURL)
+	project, err := h.projectService.UpdateProject(name, req.Name, req.Description, req.RepoURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "更新项目失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, toProjectResponse(project))
+	response.Success(c, toProjectResponse(project))
 }
 
 func (h *ProjectHandler) DeleteProject(c *gin.Context) {
-	id := c.Param("id")
-	if err := h.projectService.DeleteProject(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	name := c.Param("name")
+	if err := h.projectService.DeleteProject(name); err != nil {
+		response.Error(c, "删除项目失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "project deleted"})
+	response.Success(c, nil)
 }
 
 func (h *ProjectHandler) ArchiveProject(c *gin.Context) {
-	id := c.Param("id")
-	if err := h.projectService.ArchiveProject(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	name := c.Param("name")
+	if err := h.projectService.ArchiveProject(name); err != nil {
+		response.Error(c, "归档项目失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "project archived"})
+	response.Success(c, nil)
 }
 
 func (h *ProjectHandler) ActivateProject(c *gin.Context) {
-	id := c.Param("id")
-	if err := h.projectService.ActivateProject(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	name := c.Param("name")
+	if err := h.projectService.ActivateProject(name); err != nil {
+		response.Error(c, "激活项目失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "project activated"})
+	response.Success(c, nil)
 }
 
 func (h *ProjectHandler) GetConfigs(c *gin.Context) {
-	id := c.Param("id")
-	configs, err := h.projectService.GetConfigs(id)
+	name := c.Param("name")
+	configs, err := h.projectService.GetConfigs(name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取配置失败："+err.Error())
 		return
 	}
 	result := make([]dto.ConfigResponse, 0, len(configs))
 	for _, cfg := range configs {
 		result = append(result, dto.ConfigResponse{ID: cfg.ID, Key: cfg.Key, Value: cfg.Value})
 	}
-	c.JSON(http.StatusOK, result)
+	response.Success(c, result)
 }
 
 func (h *ProjectHandler) SetConfig(c *gin.Context) {
-	id := c.Param("id")
+	name := c.Param("name")
 	var req struct {
 		Key   string `json:"key" binding:"required"`
 		Value string `json:"value"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	cfg, err := h.projectService.SetConfig(id, req.Key, req.Value)
+	cfg, err := h.projectService.SetConfig(name, req.Key, req.Value)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "设置配置失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, dto.ConfigResponse{ID: cfg.ID, Key: cfg.Key, Value: cfg.Value})
+	response.Success(c, dto.ConfigResponse{ID: cfg.ID, Key: cfg.Key, Value: cfg.Value})
 }
 
 func (h *ProjectHandler) GetStandards(c *gin.Context) {
-	id := c.Param("id")
-	std, err := h.projectService.GetStandards(id)
+	name := c.Param("name")
+	std, err := h.projectService.GetStandards(name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取规范失败："+err.Error())
 		return
 	}
 	if std == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "standards not found"})
+		response.NotFound(c, "规范不存在")
 		return
 	}
-	c.JSON(http.StatusOK, dto.StandardsResponse{
+	response.Success(c, dto.StandardsResponse{
 		ID:                std.ID,
 		BranchStrategy:    std.BranchStrategy,
 		TechStack:         std.TechStack,
@@ -204,44 +201,44 @@ func (h *ProjectHandler) GetStandards(c *gin.Context) {
 }
 
 func (h *ProjectHandler) GetConfigHistory(c *gin.Context) {
-	id := c.Param("id")
-	logs, err := h.projectService.GetConfigHistory(id)
+	name := c.Param("name")
+	logs, err := h.projectService.GetConfigHistory(name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取配置历史失败："+err.Error())
 		return
 	}
 	result := make([]dto.ConfigChangeLogResponse, 0, len(logs))
 	for _, l := range logs {
 		result = append(result, dto.ConfigChangeLogResponse{
-			ID:        l.ID,
-			ProjectID: l.ProjectID,
-			ConfigKey: l.ConfigKey,
-			OldValue:  l.OldValue,
-			NewValue:  l.NewValue,
-			ChangedAt: l.ChangedAt.Format("2006-01-02T15:04:05Z"),
-			ChangedBy: l.ChangedBy,
+			ID:          l.ID,
+			ProjectName: l.ProjectName,
+			ConfigKey:   l.ConfigKey,
+			OldValue:    l.OldValue,
+			NewValue:    l.NewValue,
+			ChangedAt:   l.ChangedAt.Format("2006-01-02T15:04:05Z"),
+			ChangedBy:   l.ChangedBy,
 		})
 	}
-	c.JSON(http.StatusOK, result)
+	response.Success(c, result)
 }
 
 func (h *ProjectHandler) UpdateStandards(c *gin.Context) {
-	id := c.Param("id")
+	name := c.Param("name")
 	var req struct {
-		BranchStrategy    string `json:"branch_strategy"`
-		TechStack         string `json:"tech_stack"`
-		CodingConventions string `json:"coding_conventions"`
+		BranchStrategy    string `json:"branchStrategy"`
+		TechStack         string `json:"techStack"`
+		CodingConventions string `json:"codingConventions"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	std, err := h.projectService.UpdateStandards(id, req.BranchStrategy, req.TechStack, req.CodingConventions)
+	std, err := h.projectService.UpdateStandards(name, req.BranchStrategy, req.TechStack, req.CodingConventions)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "更新规范失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, dto.StandardsResponse{
+	response.Success(c, dto.StandardsResponse{
 		ID:                std.ID,
 		BranchStrategy:    std.BranchStrategy,
 		TechStack:         std.TechStack,
@@ -251,7 +248,6 @@ func (h *ProjectHandler) UpdateStandards(c *gin.Context) {
 
 func toProjectResponse(p *project.Project) dto.ProjectResponse {
 	return dto.ProjectResponse{
-		ID:          p.ID,
 		Name:        p.Name,
 		Description: p.Description,
 		RepoURL:     p.RepoURL,

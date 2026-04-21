@@ -29,7 +29,7 @@ func (ta *TaskAggregate) Assign(agentID string, eventBus event.EventBus) error {
 	evt := event.NewAgentTaskEvent(uid.NewID(), ta.Task.ID, event.TaskAssignedEvent)
 	evt.Payload["agent_id"] = agentID
 	evt.Payload["agent_type"] = string(ta.Task.AgentType)
-	evt.Payload["project_id"] = ta.Task.ProjectID
+	evt.Payload["project_name"] = ta.Task.ProjectName
 
 	return eventBus.Publish(evt)
 }
@@ -76,7 +76,7 @@ func (ta *TaskAggregate) Archive(eventBus event.EventBus) error {
 	}
 
 	evt := event.NewAgentTaskEvent(uid.NewID(), ta.Task.ID, event.TaskArchivedEvent)
-	evt.Payload["project_id"] = ta.Task.ProjectID
+	evt.Payload["project_name"] = ta.Task.ProjectName
 
 	return eventBus.Publish(evt)
 }

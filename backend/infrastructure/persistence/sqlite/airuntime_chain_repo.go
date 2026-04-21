@@ -10,14 +10,23 @@ import (
 )
 
 type ModelChainRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewModelChainRepo(db *gorm.DB) airuntime.ChainRepo {
-	return &ModelChainRepo{db: db}
+func NewModelChainRepo(dbProvider DBProvider) airuntime.ChainRepo {
+	return &ModelChainRepo{dbProvider: dbProvider}
+}
+
+func (r *ModelChainRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *ModelChainRepo) Save(chain *airuntime.Chain) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.ModelChain{
 		ID:        chain.ID,
 		Name:      chain.Name,
@@ -28,7 +37,7 @@ func (r *ModelChainRepo) Save(chain *airuntime.Chain) error {
 		UpdatedAt: time.Now(),
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -36,8 +45,13 @@ func (r *ModelChainRepo) Save(chain *airuntime.Chain) error {
 }
 
 func (r *ModelChainRepo) FindByID(id string) (*airuntime.Chain, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.ModelChain
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -49,8 +63,13 @@ func (r *ModelChainRepo) FindByID(id string) (*airuntime.Chain, error) {
 }
 
 func (r *ModelChainRepo) FindAll() ([]*airuntime.Chain, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.ModelChain
-	result := r.db.Find(&models)
+	result := db.Find(&models)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -76,14 +95,23 @@ func (r *ModelChainRepo) modelsToDomain(models []models.ModelChain) []*airuntime
 }
 
 type CallLogRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewCallLogRepo(db *gorm.DB) airuntime.CallLogRepo {
-	return &CallLogRepo{db: db}
+func NewCallLogRepo(dbProvider DBProvider) airuntime.CallLogRepo {
+	return &CallLogRepo{dbProvider: dbProvider}
+}
+
+func (r *CallLogRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *CallLogRepo) Save(log *airuntime.CallLog) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.CallLog{
 		ID:         log.ID,
 		AgentID:    log.AgentID,
@@ -100,7 +128,7 @@ func (r *CallLogRepo) Save(log *airuntime.CallLog) error {
 		UpdatedAt:  time.Now(),
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save call log: %w", result.Error)
 	}
@@ -108,8 +136,13 @@ func (r *CallLogRepo) Save(log *airuntime.CallLog) error {
 }
 
 func (r *CallLogRepo) FindByAgentID(agentID string) ([]*airuntime.CallLog, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CallLog
-	result := r.db.Where("agent_id = ?", agentID).Order("created_at DESC").Find(&models)
+	result := db.Where("agent_id = ?", agentID).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find call logs by agent id: %w", result.Error)
 	}
@@ -118,8 +151,13 @@ func (r *CallLogRepo) FindByAgentID(agentID string) ([]*airuntime.CallLog, error
 }
 
 func (r *CallLogRepo) FindByTimeRange(start, end time.Time) ([]*airuntime.CallLog, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CallLog
-	result := r.db.Where("created_at BETWEEN ? AND ?", start, end).Order("created_at DESC").Find(&models)
+	result := db.Where("created_at BETWEEN ? AND ?", start, end).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find call logs by time range: %w", result.Error)
 	}
@@ -128,8 +166,13 @@ func (r *CallLogRepo) FindByTimeRange(start, end time.Time) ([]*airuntime.CallLo
 }
 
 func (r *CallLogRepo) FindByModelID(modelID string) ([]*airuntime.CallLog, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CallLog
-	result := r.db.Where("model_id = ?", modelID).Order("created_at DESC").Find(&models)
+	result := db.Where("model_id = ?", modelID).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find call logs by model id: %w", result.Error)
 	}
@@ -138,8 +181,13 @@ func (r *CallLogRepo) FindByModelID(modelID string) ([]*airuntime.CallLog, error
 }
 
 func (r *CallLogRepo) FindByStatus(status string) ([]*airuntime.CallLog, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.CallLog
-	result := r.db.Where("status = ?", status).Order("created_at DESC").Find(&models)
+	result := db.Where("status = ?", status).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find call logs by status: %w", result.Error)
 	}

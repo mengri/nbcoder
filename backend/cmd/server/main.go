@@ -42,7 +42,8 @@ func main() {
 		log.Fatalf("Failed to initialize database schema: %v", err)
 	}
 
-	repos := sqlite.NewRepositories(dbManager.GetDB())
+	projectBaseDir := dbConfig.ProjectBaseDir
+	repos := sqlite.NewRepositories(dbManager, projectBaseDir)
 	agentRegistry := agent.NewAgentRegistry()
 	agentService := agentApp.NewAgentService(repos.Task, repos.AgentExecution, agentRegistry, eventBus)
 
@@ -50,7 +51,7 @@ func main() {
 
 	pipelineService := pipelineApp.NewPipelineService(repos.Pipeline, repos.StageRecord, eventBus)
 
-	projectService := projectApp.NewProjectService(repos.Project, repos.ProjectConfig, repos.Standards, repos.ConfigChangeLog)
+	projectService := projectApp.NewProjectService(repos.Project, repos.ProjectConfig, repos.Standards, repos.ConfigChangeLog, projectBaseDir, dbManager)
 
 	gitClient := git.NewShellGitClient("/tmp/nbcoder/clones")
 	clonePoolService := clonepoolApp.NewClonePoolService(

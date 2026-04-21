@@ -36,7 +36,13 @@ func (s *AgentService) CreateTask(id, name, desc string) (*agent.TaskAggregate, 
 }
 
 func (s *AgentService) AssignTask(taskID, agentID string) error {
-	task, err := s.taskRepo.FindByID(taskID)
+	projectName := ""
+	tasks, _ := s.taskRepo.FindAll()
+	if len(tasks) > 0 {
+		projectName = tasks[0].ProjectName
+	}
+
+	task, err := s.taskRepo.FindByID(taskID, projectName)
 	if err != nil {
 		return err
 	}
@@ -51,7 +57,13 @@ func (s *AgentService) AssignTask(taskID, agentID string) error {
 }
 
 func (s *AgentService) CompleteTask(taskID string) error {
-	task, err := s.taskRepo.FindByID(taskID)
+	projectName := ""
+	tasks, _ := s.taskRepo.FindAll()
+	if len(tasks) > 0 {
+		projectName = tasks[0].ProjectName
+	}
+
+	task, err := s.taskRepo.FindByID(taskID, projectName)
 	if err != nil {
 		return err
 	}
@@ -66,7 +78,13 @@ func (s *AgentService) CompleteTask(taskID string) error {
 }
 
 func (s *AgentService) FailTask(taskID, reason string) error {
-	task, err := s.taskRepo.FindByID(taskID)
+	projectName := ""
+	tasks, _ := s.taskRepo.FindAll()
+	if len(tasks) > 0 {
+		projectName = tasks[0].ProjectName
+	}
+
+	task, err := s.taskRepo.FindByID(taskID, projectName)
 	if err != nil {
 		return err
 	}
@@ -81,5 +99,11 @@ func (s *AgentService) FailTask(taskID, reason string) error {
 }
 
 func (s *AgentService) GetTask(taskID string) (*agent.Task, error) {
-	return s.taskRepo.FindByID(taskID)
+	projectName := ""
+	tasks, _ := s.taskRepo.FindAll()
+	if len(tasks) > 0 {
+		projectName = tasks[0].ProjectName
+	}
+
+	return s.taskRepo.FindByID(taskID, projectName)
 }

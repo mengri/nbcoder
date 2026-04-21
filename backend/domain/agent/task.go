@@ -15,7 +15,7 @@ type Task struct {
 	Priority    int             `json:"priority"`
 	AssignedTo  string          `json:"assigned_to,omitempty"`
 	PipelineID  string          `json:"pipeline_id,omitempty"`
-	ProjectID   string          `json:"project_id"`
+	ProjectName string          `json:"projectName"`
 	CreatedAt   time.Time       `json:"created_at"`
 	UpdatedAt   time.Time       `json:"updated_at"`
 	StartedAt   *time.Time      `json:"started_at,omitempty"`
@@ -23,7 +23,7 @@ type Task struct {
 	Context     map[string]interface{} `json:"context,omitempty"`
 }
 
-func NewTask(id, name, description, taskType string, agentType AgentType, projectID string) *Task {
+func NewTask(id, name, description, taskType string, agentType AgentType, projectName string) *Task {
 	now := time.Now().UTC()
 	return &Task{
 		ID:          id,
@@ -33,7 +33,7 @@ func NewTask(id, name, description, taskType string, agentType AgentType, projec
 		TaskType:    taskType,
 		Status:      TaskPending,
 		Priority:    5,
-		ProjectID:   projectID,
+		ProjectName: projectName,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		Context:     make(map[string]interface{}),

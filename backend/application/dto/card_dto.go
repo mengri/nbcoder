@@ -5,7 +5,7 @@ type CreateCardRequest struct {
 	Description string `json:"description"`
 	Original    string `json:"original"`
 	Priority    string `json:"priority"`
-	ProjectID   string `json:"project_id" binding:"required"`
+	ProjectName string `json:"projectName" binding:"required"`
 }
 
 type CardResponse struct {
@@ -15,16 +15,16 @@ type CardResponse struct {
 	Original         string `json:"original"`
 	Status           string `json:"status"`
 	Priority         string `json:"priority"`
-	StructuredOutput string `json:"structured_output,omitempty"`
-	PipelineID       string `json:"pipeline_id,omitempty"`
-	ProjectID        string `json:"project_id"`
-	SupersededBy     string `json:"superseded_by,omitempty"`
-	CreatedAt        string `json:"created_at"`
-	UpdatedAt        string `json:"updated_at"`
+	StructuredOutput string `json:"structuredOutput,omitempty"`
+	PipelineID       string `json:"pipelineId,omitempty"`
+	ProjectName      string `json:"projectName"`
+	SupersededBy     string `json:"supersededBy,omitempty"`
+	CreatedAt        string `json:"createdAt"`
+	UpdatedAt        string `json:"updatedAt"`
 }
 
 type AddDependencyRequest struct {
-	DependsOnID string `json:"depends_on_id" binding:"required"`
+	DependsOnID string `json:"dependsOnId" binding:"required"`
 	Type        string `json:"type" binding:"required"`
 }
 
@@ -32,6 +32,6 @@ type UpdateCardRequest struct {
 	Title            *string `json:"title,omitempty"`
 	Description      *string `json:"description,omitempty"`
 	Priority         *string `json:"priority,omitempty"`
-	StructuredOutput *string `json:"structured_output,omitempty"`
-	PipelineID       *string `json:"pipeline_id,omitempty"`
+	StructuredOutput *string `json:"structuredOutput,omitempty"`
+	PipelineID       *string `json:"pipelineId,omitempty"`
 }

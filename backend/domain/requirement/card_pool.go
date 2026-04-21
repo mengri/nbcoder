@@ -23,9 +23,9 @@ const (
 )
 
 type CardFilter struct {
-	Statuses  []CardStatus
-	Priority  *Priority
-	ProjectID string
+	Statuses    []CardStatus
+	Priority    *Priority
+	ProjectName string
 }
 
 type CardPoolQuery struct {
@@ -85,11 +85,11 @@ func (cp *CardPool) QueryCards(query *CardPoolQuery) (*CardPoolView, error) {
 				}
 				allCards = append(allCards, statusCards...)
 			}
-			cards = cp.filterByProjectID(allCards, query.Filter.ProjectID)
-		} else if query.Filter.ProjectID != "" {
-			projectCards, err := cp.cardRepo.FindByProjectID(query.Filter.ProjectID)
+			cards = cp.filterByProjectName(allCards, query.Filter.ProjectName)
+		} else if query.Filter.ProjectName != "" {
+			projectCards, err := cp.cardRepo.FindByProjectName(query.Filter.ProjectName)
 			if err != nil {
-				return nil, fmt.Errorf("failed to find cards by project %s: %w", query.Filter.ProjectID, err)
+				return nil, fmt.Errorf("failed to find cards by project %s: %w", query.Filter.ProjectName, err)
 			}
 			cards = projectCards
 		} else {
@@ -141,14 +141,14 @@ func (cp *CardPool) QueryCards(query *CardPoolQuery) (*CardPoolView, error) {
 	}, nil
 }
 
-func (cp *CardPool) filterByProjectID(cards []*Card, projectID string) []*Card {
-	if projectID == "" {
+func (cp *CardPool) filterByProjectName(cards []*Card, projectName string) []*Card {
+	if projectName == "" {
 		return cards
 	}
 
 	var filtered []*Card
 	for _, card := range cards {
-		if card.ProjectID == projectID {
+		if card.ProjectName == projectName {
 			filtered = append(filtered, card)
 		}
 	}
@@ -228,8 +228,27 @@ func (cp *CardPool) BatchOperation(cardIDs []string, operation BatchOperation, p
 		Errors: []error{},
 	}
 
+	projectName := ""
 	for _, cardID := range cardIDs {
-		card, err := cp.cardRepo.FindByID(cardID)
+		card, err := cp.cardRepo.FindByID(cardID, "")
+		if err != nil {
+			result.FailureCount++
+			result.Errors = append(result.Errors, fmt.Errorf("card %s not found: %w", cardID, err))
+			continue
+		}
+		if card == nil {
+			result.FailureCount++
+			result.Errors = append(result.Errors, fmt.Errorf("card %s not found", cardID))
+			continue
+		}
+		if projectName == "" {
+			projectName = card.ProjectName
+		}
+		break
+	}
+
+	for _, cardID := range cardIDs {
+		card, err := cp.cardRepo.FindByID(cardID, projectName)
 		if err != nil {
 			result.FailureCount++
 			result.Errors = append(result.Errors, fmt.Errorf("card %s not found: %w", cardID, err))

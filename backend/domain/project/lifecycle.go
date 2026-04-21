@@ -24,24 +24,24 @@ var validTransitions = map[LifecycleStatus][]LifecycleStatus{
 }
 
 type ProjectLifecycle struct {
-	ID          string          `json:"id"`
-	ProjectID   string          `json:"project_id"`
-	Status      LifecycleStatus `json:"status"`
-	ActivatedAt *time.Time      `json:"activated_at,omitempty"`
-	SuspendedAt *time.Time      `json:"suspended_at,omitempty"`
-	ArchivedAt  *time.Time      `json:"archived_at,omitempty"`
-	CreatedAt   time.Time       `json:"created_at"`
-	UpdatedAt   time.Time       `json:"updated_at"`
+	ID           string          `json:"id"`
+	ProjectName  string          `json:"project_name"`
+	Status       LifecycleStatus `json:"status"`
+	ActivatedAt  *time.Time      `json:"activated_at,omitempty"`
+	SuspendedAt  *time.Time      `json:"suspended_at,omitempty"`
+	ArchivedAt   *time.Time      `json:"archived_at,omitempty"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
 }
 
-func NewProjectLifecycle(id, projectID string) *ProjectLifecycle {
+func NewProjectLifecycle(id, projectName string) *ProjectLifecycle {
 	now := time.Now().UTC()
 	return &ProjectLifecycle{
-		ID:        id,
-		ProjectID: projectID,
-		Status:    LifecycleCreating,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:          id,
+		ProjectName: projectName,
+		Status:      LifecycleCreating,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 }
 

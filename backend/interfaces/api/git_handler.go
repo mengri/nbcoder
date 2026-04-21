@@ -1,11 +1,10 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	gitApp "github.com/mengri/nbcoder/application/git"
 	"github.com/mengri/nbcoder/domain/git"
+	"github.com/mengri/nbcoder/pkg/response"
 )
 
 type GitHandler struct {
@@ -46,29 +45,29 @@ func (h *GitHandler) RegisterRoutes(router *gin.RouterGroup) {
 func (h *GitHandler) CreatePullRequest(c *gin.Context) {
 	var req struct {
 		Title        string `json:"title" binding:"required"`
-		SourceBranch string `json:"source_branch" binding:"required"`
-		TargetBranch string `json:"target_branch" binding:"required"`
-		ProjectID    string `json:"project_id"`
+		SourceBranch string `json:"sourceBranch" binding:"required"`
+		TargetBranch string `json:"targetBranch" binding:"required"`
+		ProjectID    string `json:"projectId"`
 		Author       string `json:"author"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	pr, err := h.gitService.CreatePullRequest(req.Title, req.SourceBranch, req.TargetBranch, req.ProjectID, req.Author)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "创建 Pull Request 失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, toPullRequestResponse(pr))
+	response.Created(c, toPullRequestResponse(pr))
 }
 
 func (h *GitHandler) CreatePullRequestWithDescription(c *gin.Context) {
 	var req struct {
 		Title        string `json:"title" binding:"required"`
-		SourceBranch string `json:"source_branch" binding:"required"`
-		TargetBranch string `json:"target_branch" binding:"required"`
-		ProjectID    string `json:"project_id"`
+		SourceBranch string `json:"sourceBranch" binding:"required"`
+		TargetBranch string `json:"targetBranch" binding:"required"`
+		ProjectID    string `json:"projectId"`
 		Author       string `json:"author"`
 		Commits      []struct {
 			Hash    string `json:"hash"`
@@ -77,7 +76,7 @@ func (h *GitHandler) CreatePullRequestWithDescription(c *gin.Context) {
 		} `json:"commits"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	commits := make([]*git.Commit, len(req.Commits))
@@ -86,58 +85,62 @@ func (h *GitHandler) CreatePullRequestWithDescription(c *gin.Context) {
 	}
 	pr, err := h.gitService.CreatePullRequestWithDescription(req.Title, req.SourceBranch, req.TargetBranch, req.ProjectID, req.Author, commits)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "创建 Pull Request 失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, toPullRequestResponse(pr))
+	response.Created(c, toPullRequestResponse(pr))
 }
 
 func (h *GitHandler) GetPullRequest(c *gin.Context) {
 	id := c.Param("id")
-	pr, err := h.gitService.GetPullRequest(id)
+	projectName := c.Query("projectName")
+	pr, err := h.gitService.GetPullRequest(id, projectName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取 Pull Request 失败："+err.Error())
 		return
 	}
 	if pr == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "pull request not found"})
+		response.NotFound(c, "Pull Request 不存在")
 		return
 	}
-	c.JSON(http.StatusOK, toPullRequestResponse(pr))
+	response.Success(c, toPullRequestResponse(pr))
 }
 
 func (h *GitHandler) MergePullRequest(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.gitService.MergePullRequest(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	projectName := c.Query("projectName")
+	if err := h.gitService.MergePullRequest(id, projectName); err != nil {
+		response.Error(c, "合并 Pull Request 失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "pull request merged"})
+	response.Success(c, nil)
 }
 
 func (h *GitHandler) ClosePullRequest(c *gin.Context) {
 	id := c.Param("id")
-	if err := h.gitService.ClosePullRequest(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	projectName := c.Query("projectName")
+	if err := h.gitService.ClosePullRequest(id, projectName); err != nil {
+		response.Error(c, "关闭 Pull Request 失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "pull request closed"})
+	response.Success(c, nil)
 }
 
 func (h *GitHandler) SquashMergePullRequest(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
-		CommitMessage string `json:"commit_message" binding:"required"`
+		CommitMessage string `json:"commitMessage" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	if err := h.gitService.SquashMergePullRequest(id, req.CommitMessage); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	projectName := c.Query("projectName")
+	if err := h.gitService.SquashMergePullRequest(id, projectName, req.CommitMessage); err != nil {
+		response.Error(c, "Squash 合并 Pull Request 失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "pull request squash merged"})
+	response.Success(c, nil)
 }
 
 func (h *GitHandler) CreateReview(c *gin.Context) {
@@ -146,15 +149,16 @@ func (h *GitHandler) CreateReview(c *gin.Context) {
 		Reviewer string `json:"reviewer" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	review, err := h.reviewService.CreateReview(prID, req.Reviewer)
+	projectName := c.Query("projectName")
+	review, err := h.reviewService.CreateReview(prID, projectName, req.Reviewer)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "创建 Review 失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, toReviewResponse(review))
+	response.Created(c, toReviewResponse(review))
 }
 
 func (h *GitHandler) ApproveReview(c *gin.Context) {
@@ -164,15 +168,15 @@ func (h *GitHandler) ApproveReview(c *gin.Context) {
 		Comment string `json:"comment"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	review, err := h.reviewService.ApproveReview(prID, reviewID, req.Comment)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "批准 Review 失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, toReviewResponse(review))
+	response.Success(c, toReviewResponse(review))
 }
 
 func (h *GitHandler) RejectReview(c *gin.Context) {
@@ -182,29 +186,29 @@ func (h *GitHandler) RejectReview(c *gin.Context) {
 		Comment string `json:"comment"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	review, err := h.reviewService.RejectReview(prID, reviewID, req.Comment)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "拒绝 Review 失败："+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, toReviewResponse(review))
+	response.Success(c, toReviewResponse(review))
 }
 
 func (h *GitHandler) GetReviews(c *gin.Context) {
 	prID := c.Param("id")
 	reviews, err := h.reviewService.GetReviews(prID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		response.Error(c, "获取 Review 列表失败："+err.Error())
 		return
 	}
 	resp := make([]gin.H, len(reviews))
 	for i, r := range reviews {
 		resp[i] = toReviewResponse(r)
 	}
-	c.JSON(http.StatusOK, gin.H{"reviews": resp})
+	response.Success(c, gin.H{"reviews": resp})
 }
 
 func (h *GitHandler) ValidateBranch(c *gin.Context) {
@@ -213,47 +217,47 @@ func (h *GitHandler) ValidateBranch(c *gin.Context) {
 		Branch  string `json:"branch"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
 	policy := &git.BranchPolicy{AllowedPattern: req.Pattern}
 	valid := h.gitService.ValidateBranch(policy, req.Branch)
-	c.JSON(http.StatusOK, gin.H{"valid": valid})
+	response.Success(c, gin.H{"valid": valid})
 }
 
 func toPullRequestResponse(pr *git.PullRequest) gin.H {
 	resp := gin.H{
-		"id":               pr.ID,
-		"title":            pr.Title,
-		"description":      pr.Description,
-		"source_branch":    pr.SourceBranch,
-		"target_branch":    pr.TargetBranch,
-		"status":           string(pr.Status),
-		"project_id":       pr.ProjectID,
-		"author":           pr.Author,
-		"created_at":       pr.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		"updated_at":       pr.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		"id":             pr.ID,
+		"title":          pr.Title,
+		"description":    pr.Description,
+		"sourceBranch":   pr.SourceBranch,
+		"targetBranch":   pr.TargetBranch,
+		"status":         string(pr.Status),
+		"projectName":    pr.ProjectName,
+		"author":         pr.Author,
+		"createdAt":      pr.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		"updatedAt":      pr.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if pr.GeneratedDesc != "" {
-		resp["generated_desc"] = pr.GeneratedDesc
+		resp["generatedDesc"] = pr.GeneratedDesc
 	}
 	if pr.SquashCommitMsg != "" {
-		resp["squash_commit_msg"] = pr.SquashCommitMsg
+		resp["squashCommitMsg"] = pr.SquashCommitMsg
 	}
 	return resp
 }
 
 func toReviewResponse(r *git.Review) gin.H {
 	resp := gin.H{
-		"id":              r.ID,
-		"pull_request_id": r.PullRequestID,
-		"reviewer":        r.Reviewer,
-		"status":          string(r.Status),
-		"comment":         r.Comment,
-		"created_at":      r.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		"id":            r.ID,
+		"pullRequestId": r.PullRequestID,
+		"reviewer":      r.Reviewer,
+		"status":        string(r.Status),
+		"comment":       r.Comment,
+		"createdAt":     r.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if r.ReviewedAt != nil {
-		resp["reviewed_at"] = r.ReviewedAt.Format("2006-01-02T15:04:05Z")
+		resp["reviewedAt"] = r.ReviewedAt.Format("2006-01-02T15:04:05Z")
 	}
 	return resp
 }

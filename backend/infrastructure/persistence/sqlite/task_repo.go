@@ -10,15 +10,27 @@ import (
 )
 
 type TaskRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewTaskRepo(db *gorm.DB) agent.TaskRepo {
-	return &TaskRepo{db: db}
+func NewTaskRepo(dbProvider DBProvider) agent.TaskRepo {
+	return &TaskRepo{dbProvider: dbProvider}
+}
+
+func (r *TaskRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *TaskRepo) Save(task *agent.Task) error {
-	_, err := json.Marshal(task.Context)
+	db, err := r.getDB(task.ProjectName)
+	if err != nil {
+		return err
+	}
+
+	_, err = json.Marshal(task.Context)
 	if err != nil {
 		return fmt.Errorf("failed to marshal task context: %w", err)
 	}
@@ -33,7 +45,7 @@ func (r *TaskRepo) Save(task *agent.Task) error {
 		Priority:    task.Priority,
 		AssignedTo:  task.AssignedTo,
 		PipelineID:  task.PipelineID,
-		ProjectID:   task.ProjectID,
+		ProjectName: task.ProjectName,
 		CreatedAt:   task.CreatedAt,
 		UpdatedAt:   task.UpdatedAt,
 		StartedAt:   task.StartedAt,
@@ -41,16 +53,21 @@ func (r *TaskRepo) Save(task *agent.Task) error {
 		Context:     models.JSONMap(task.Context),
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save task: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *TaskRepo) FindByID(id string) (*agent.Task, error) {
+func (r *TaskRepo) FindByID(id string, projectName string) (*agent.Task, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.Task
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -61,19 +78,29 @@ func (r *TaskRepo) FindByID(id string) (*agent.Task, error) {
 	return r.modelToDomain(&model), nil
 }
 
-func (r *TaskRepo) FindByProjectID(projectID string) ([]*agent.Task, error) {
+func (r *TaskRepo) FindByProjectName(projectName string) ([]*agent.Task, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Task
-	result := r.db.Where("project_id = ?", projectID).Order("created_at DESC").Find(&models)
+	result := db.Where("project_name = ?", projectName).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find tasks by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find tasks by project name: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
 func (r *TaskRepo) FindByStatus(status agent.TaskStatus) ([]*agent.Task, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Task
-	result := r.db.Where("status = ?", status).Order("created_at DESC").Find(&models)
+	result := db.Where("status = ?", status).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find tasks by status: %w", result.Error)
 	}
@@ -82,8 +109,13 @@ func (r *TaskRepo) FindByStatus(status agent.TaskStatus) ([]*agent.Task, error) 
 }
 
 func (r *TaskRepo) FindByAgentID(agentID string) ([]*agent.Task, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Task
-	result := r.db.Where("assigned_to = ?", agentID).Order("created_at DESC").Find(&models)
+	result := db.Where("assigned_to = ?", agentID).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find tasks by agent id: %w", result.Error)
 	}
@@ -92,8 +124,13 @@ func (r *TaskRepo) FindByAgentID(agentID string) ([]*agent.Task, error) {
 }
 
 func (r *TaskRepo) FindByPipelineID(pipelineID string) ([]*agent.Task, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Task
-	result := r.db.Where("pipeline_id = ?", pipelineID).Order("created_at DESC").Find(&models)
+	result := db.Where("pipeline_id = ?", pipelineID).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find tasks by pipeline id: %w", result.Error)
 	}
@@ -102,8 +139,13 @@ func (r *TaskRepo) FindByPipelineID(pipelineID string) ([]*agent.Task, error) {
 }
 
 func (r *TaskRepo) FindAll() ([]*agent.Task, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Task
-	result := r.db.Order("created_at DESC").Find(&models)
+	result := db.Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find all tasks: %w", result.Error)
 	}
@@ -112,7 +154,12 @@ func (r *TaskRepo) FindAll() ([]*agent.Task, error) {
 }
 
 func (r *TaskRepo) Update(task *agent.Task) error {
-	_, err := json.Marshal(task.Context)
+	db, err := r.getDB(task.ProjectName)
+	if err != nil {
+		return err
+	}
+
+	_, err = json.Marshal(task.Context)
 	if err != nil {
 		return fmt.Errorf("failed to marshal task context: %w", err)
 	}
@@ -127,7 +174,7 @@ func (r *TaskRepo) Update(task *agent.Task) error {
 		Priority:    task.Priority,
 		AssignedTo:  task.AssignedTo,
 		PipelineID:  task.PipelineID,
-		ProjectID:   task.ProjectID,
+		ProjectName: task.ProjectName,
 		CreatedAt:   task.CreatedAt,
 		UpdatedAt:   task.UpdatedAt,
 		StartedAt:   task.StartedAt,
@@ -135,15 +182,20 @@ func (r *TaskRepo) Update(task *agent.Task) error {
 		Context:     models.JSONMap(task.Context),
 	}
 
-	result := r.db.Model(&models.Task{}).Where("id = ?", task.ID).Updates(model)
+	result := db.Model(&models.Task{}).Where("id = ?", task.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update task: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *TaskRepo) Delete(id string) error {
-	result := r.db.Delete(&models.Task{}, "id = ?", id)
+func (r *TaskRepo) Delete(id string, projectName string) error {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.Task{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete task: %w", result.Error)
 	}
@@ -151,8 +203,13 @@ func (r *TaskRepo) Delete(id string) error {
 }
 
 func (r *TaskRepo) FindByPriority(minPriority int) ([]*agent.Task, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Task
-	result := r.db.Where("priority >= ?", minPriority).Order("priority DESC, created_at ASC").Find(&models)
+	result := db.Where("priority >= ?", minPriority).Order("priority DESC, created_at ASC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find tasks by priority: %w", result.Error)
 	}
@@ -161,8 +218,13 @@ func (r *TaskRepo) FindByPriority(minPriority int) ([]*agent.Task, error) {
 }
 
 func (r *TaskRepo) FindPending() ([]*agent.Task, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.Task
-	result := r.db.Where("status = ?", "PENDING").Order("priority DESC, created_at ASC").Find(&models)
+	result := db.Where("status = ?", "PENDING").Order("priority DESC, created_at ASC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find pending tasks: %w", result.Error)
 	}
@@ -181,7 +243,7 @@ func (r *TaskRepo) modelToDomain(m *models.Task) *agent.Task {
 		Priority:    m.Priority,
 		AssignedTo:  m.AssignedTo,
 		PipelineID:  m.PipelineID,
-		ProjectID:   m.ProjectID,
+		ProjectName: m.ProjectName,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 		StartedAt:   m.StartedAt,

@@ -35,9 +35,9 @@ func NewGitServiceWithRepos(prRepo git.PullRequestRepo, reviewRepo git.ReviewRep
 	}
 }
 
-func (s *GitService) CreatePullRequest(title, source, target, projectID, author string) (*git.PullRequest, error) {
+func (s *GitService) CreatePullRequest(title, source, target, projectName, author string) (*git.PullRequest, error) {
 	pr := git.NewPullRequest(uid.NewID(), title, source, target)
-	pr.ProjectID = projectID
+	pr.ProjectName = projectName
 	pr.Author = author
 	if err := s.prRepo.Save(pr); err != nil {
 		return nil, err
@@ -45,8 +45,8 @@ func (s *GitService) CreatePullRequest(title, source, target, projectID, author 
 	return pr, nil
 }
 
-func (s *GitService) CreatePullRequestWithDescription(title, source, target, projectID, author string, commits []*git.Commit) (*git.PullRequest, error) {
-	pr, err := s.CreatePullRequest(title, source, target, projectID, author)
+func (s *GitService) CreatePullRequestWithDescription(title, source, target, projectName, author string, commits []*git.Commit) (*git.PullRequest, error) {
+	pr, err := s.CreatePullRequest(title, source, target, projectName, author)
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +59,12 @@ func (s *GitService) CreatePullRequestWithDescription(title, source, target, pro
 	return pr, nil
 }
 
-func (s *GitService) GetPullRequest(id string) (*git.PullRequest, error) {
-	return s.prRepo.FindByID(id)
+func (s *GitService) GetPullRequest(id, projectName string) (*git.PullRequest, error) {
+	return s.prRepo.FindByID(id, projectName)
 }
 
-func (s *GitService) MergePullRequest(id string) error {
-	pr, err := s.prRepo.FindByID(id)
+func (s *GitService) MergePullRequest(id, projectName string) error {
+	pr, err := s.prRepo.FindByID(id, projectName)
 	if err != nil {
 		return err
 	}
@@ -77,8 +77,8 @@ func (s *GitService) MergePullRequest(id string) error {
 	return s.prRepo.Update(pr)
 }
 
-func (s *GitService) ClosePullRequest(id string) error {
-	pr, err := s.prRepo.FindByID(id)
+func (s *GitService) ClosePullRequest(id, projectName string) error {
+	pr, err := s.prRepo.FindByID(id, projectName)
 	if err != nil {
 		return err
 	}
@@ -95,8 +95,8 @@ func (s *GitService) ValidateBranch(policy *git.BranchPolicy, branch string) boo
 	return policy.Validate(branch)
 }
 
-func (s *GitService) SquashMergePullRequest(id, commitMsg string) error {
-	pr, err := s.prRepo.FindByID(id)
+func (s *GitService) SquashMergePullRequest(id, commitMsg, projectName string) error {
+	pr, err := s.prRepo.FindByID(id, projectName)
 	if err != nil {
 		return err
 	}

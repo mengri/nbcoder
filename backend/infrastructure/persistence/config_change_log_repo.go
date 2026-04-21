@@ -29,7 +29,7 @@ func (r *InMemoryConfigChangeLogRepo) FindByProjectID(projectID string) ([]*proj
 	defer r.mu.RUnlock()
 	var result []*project.ConfigChangeLog
 	for _, l := range r.logs {
-		if l.ProjectID == projectID {
+		if l.ProjectName == projectID {
 			result = append(result, l)
 		}
 	}
@@ -41,7 +41,7 @@ func (r *InMemoryConfigChangeLogRepo) FindByConfigKey(projectID, configKey strin
 	defer r.mu.RUnlock()
 	var result []*project.ConfigChangeLog
 	for _, l := range r.logs {
-		if l.ProjectID == projectID && l.ConfigKey == configKey {
+		if l.ProjectName == projectID && l.ConfigKey == configKey {
 			result = append(result, l)
 		}
 	}

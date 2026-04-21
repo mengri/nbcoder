@@ -9,47 +9,69 @@ import (
 )
 
 type BranchPolicyConfigRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewBranchPolicyConfigRepo(db *gorm.DB) project.BranchPolicyConfigRepo {
-	return &BranchPolicyConfigRepo{db: db}
+func NewBranchPolicyConfigRepo(dbProvider DBProvider) project.BranchPolicyConfigRepo {
+	return &BranchPolicyConfigRepo{dbProvider: dbProvider}
+}
+
+func (r *BranchPolicyConfigRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *BranchPolicyConfigRepo) Save(c *project.BranchPolicyConfig) error {
-	model := &models.BranchPolicyConfig{
-		ID:          c.ID,
-		ProjectID:   c.ProjectID,
-		PolicyName:  "",
-		PolicyConfig: "",
-		RequireReviews: false,
-		MinReviewers:   0,
-		RequireTests:   false,
-		AutoMergeEnabled: false,
-		CreatedAt:   c.CreatedAt,
-		UpdatedAt:   c.UpdatedAt,
+	db, err := r.getDB(c.ProjectName)
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Save(model)
+	model := &models.BranchPolicyConfig{
+		ID:               c.ID,
+		ProjectName:      c.ProjectName,
+		PolicyName:       c.Pattern,
+		PolicyConfig:     c.Description,
+		RequireReviews:   false,
+		MinReviewers:     1,
+		RequireTests:     false,
+		AutoMergeEnabled: false,
+		CreatedAt:        c.CreatedAt,
+		UpdatedAt:        c.UpdatedAt,
+	}
+
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save branch policy config: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *BranchPolicyConfigRepo) FindByProjectID(projectID string) ([]*project.BranchPolicyConfig, error) {
+func (r *BranchPolicyConfigRepo) FindByProjectName(projectName string) ([]*project.BranchPolicyConfig, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.BranchPolicyConfig
-	result := r.db.Where("project_id = ?", projectID).Find(&models)
+	result := db.Where("project_name = ?", projectName).Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find branch policy configs by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find branch policy configs by project name: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
-func (r *BranchPolicyConfigRepo) FindByID(id string) (*project.BranchPolicyConfig, error) {
+func (r *BranchPolicyConfigRepo) FindByID(id string, projectName string) (*project.BranchPolicyConfig, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.BranchPolicyConfig
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -61,28 +83,45 @@ func (r *BranchPolicyConfigRepo) FindByID(id string) (*project.BranchPolicyConfi
 }
 
 func (r *BranchPolicyConfigRepo) Update(c *project.BranchPolicyConfig) error {
-	model := &models.BranchPolicyConfig{
-		ProjectID: c.ProjectID,
+	db, err := r.getDB(c.ProjectName)
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Model(&models.BranchPolicyConfig{}).Where("id = ?", c.ID).Updates(model)
+	model := &models.BranchPolicyConfig{
+		ProjectName:  c.ProjectName,
+		PolicyName:   c.Pattern,
+		PolicyConfig: c.Description,
+	}
+
+	result := db.Model(&models.BranchPolicyConfig{}).Where("id = ?", c.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update branch policy config: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *BranchPolicyConfigRepo) Delete(id string) error {
-	result := r.db.Delete(&models.BranchPolicyConfig{}, "id = ?", id)
+func (r *BranchPolicyConfigRepo) Delete(id string, projectName string) error {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.BranchPolicyConfig{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete branch policy config: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *BranchPolicyConfigRepo) FindByPolicyName(projectID, policyName string) (*project.BranchPolicyConfig, error) {
+func (r *BranchPolicyConfigRepo) FindByPolicyName(projectName, policyName string) (*project.BranchPolicyConfig, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.BranchPolicyConfig
-	result := r.db.Where("project_id = ? AND policy_name = ?", projectID, policyName).First(&model)
+	result := db.Where("project_name = ? AND policy_name = ?", projectName, policyName).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -96,9 +135,9 @@ func (r *BranchPolicyConfigRepo) FindByPolicyName(projectID, policyName string) 
 func (r *BranchPolicyConfigRepo) modelToDomain(m *models.BranchPolicyConfig) *project.BranchPolicyConfig {
 	return &project.BranchPolicyConfig{
 		ID:          m.ID,
-		ProjectID:   m.ProjectID,
-		Pattern:     "",
-		Description: "",
+		ProjectName: m.ProjectName,
+		Pattern:     m.PolicyName,
+		Description: m.PolicyConfig,
 		IsDefault:   false,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,

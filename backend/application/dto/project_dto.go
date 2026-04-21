@@ -3,26 +3,25 @@ package dto
 type CreateProjectRequest struct {
 	Name             string `json:"name" binding:"required"`
 	Description      string `json:"description"`
-	RepoURL          string `json:"repo_url"`
-	BranchStrategy   string `json:"branch_strategy"`
-	TechStack        string `json:"tech_stack"`
-	CodingConventions string `json:"coding_conventions"`
+	RepoURL          string `json:"repoUrl"`
+	BranchStrategy   string `json:"branchStrategy"`
+	TechStack        string `json:"techStack"`
+	CodingConventions string `json:"codingConventions"`
 }
 
 type ProjectResponse struct {
-	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	RepoURL     string `json:"repo_url"`
+	RepoURL     string `json:"repoUrl"`
 	Status      string `json:"status"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
 }
 
 type InitProjectResponse struct {
-	Project     ProjectResponse   `json:"project"`
-	Directories []string          `json:"directories"`
-	Configs     []ConfigResponse  `json:"configs"`
+	Project     ProjectResponse    `json:"project"`
+	Directories []string           `json:"directories"`
+	Configs     []ConfigResponse   `json:"configs"`
 	Standards   *StandardsResponse `json:"standards,omitempty"`
 }
 
@@ -34,17 +33,17 @@ type ConfigResponse struct {
 
 type StandardsResponse struct {
 	ID                string `json:"id"`
-	BranchStrategy    string `json:"branch_strategy"`
-	TechStack         string `json:"tech_stack"`
-	CodingConventions string `json:"coding_conventions"`
+	BranchStrategy    string `json:"branchStrategy"`
+	TechStack         string `json:"techStack"`
+	CodingConventions string `json:"codingConventions"`
 }
 
 type ConfigChangeLogResponse struct {
-	ID        string `json:"id"`
-	ProjectID string `json:"project_id"`
-	ConfigKey string `json:"config_key"`
-	OldValue  string `json:"old_value"`
-	NewValue  string `json:"new_value"`
-	ChangedAt string `json:"changed_at"`
-	ChangedBy string `json:"changed_by"`
+	ID          string `json:"id"`
+	ProjectName string `json:"projectName"`
+	ConfigKey   string `json:"configKey"`
+	OldValue    string `json:"oldValue"`
+	NewValue    string `json:"newValue"`
+	ChangedAt   string `json:"changedAt"`
+	ChangedBy   string `json:"changedBy"`
 }

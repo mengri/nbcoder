@@ -9,33 +9,50 @@ import (
 )
 
 type ProjectConfigRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewProjectConfigRepo(db *gorm.DB) project.ProjectConfigRepo {
-	return &ProjectConfigRepo{db: db}
+func NewProjectConfigRepo(dbProvider DBProvider) project.ProjectConfigRepo {
+	return &ProjectConfigRepo{dbProvider: dbProvider}
+}
+
+func (r *ProjectConfigRepo) getDB(projectName string) (*gorm.DB, error) {
+	if projectName == "" {
+		return r.dbProvider.GetGlobalDB(), nil
+	}
+	return r.dbProvider.GetProjectDB(projectName)
 }
 
 func (r *ProjectConfigRepo) Save(c *project.ProjectConfig) error {
-	model := &models.ProjectConfig{
-		ID:        c.ID,
-		ProjectID: c.ProjectID,
-		Key:       c.Key,
-		Value:     c.Value,
-		CreatedAt: c.CreatedAt,
-		UpdatedAt: c.UpdatedAt,
+	db, err := r.getDB(c.ProjectName)
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Save(model)
+	model := &models.ProjectConfig{
+		ID:          c.ID,
+		ProjectName: c.ProjectName,
+		Key:         c.Key,
+		Value:       c.Value,
+		CreatedAt:   c.CreatedAt,
+		UpdatedAt:   c.UpdatedAt,
+	}
+
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save project config: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *ProjectConfigRepo) FindByID(id string) (*project.ProjectConfig, error) {
+func (r *ProjectConfigRepo) FindByID(id string, projectName string) (*project.ProjectConfig, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.ProjectConfig
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -46,32 +63,47 @@ func (r *ProjectConfigRepo) FindByID(id string) (*project.ProjectConfig, error) 
 	return r.modelToDomain(&model), nil
 }
 
-func (r *ProjectConfigRepo) FindByProjectID(projectID string) ([]*project.ProjectConfig, error) {
+func (r *ProjectConfigRepo) FindByProjectName(projectName string) ([]*project.ProjectConfig, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.ProjectConfig
-	result := r.db.Where("project_id = ?", projectID).Find(&models)
+	result := db.Where("project_name = ?", projectName).Find(&models)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to find configs by project id: %w", result.Error)
+		return nil, fmt.Errorf("failed to find configs by project name: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
 
-func (r *ProjectConfigRepo) FindByKey(projectID, key string) (*project.ProjectConfig, error) {
+func (r *ProjectConfigRepo) FindByKey(projectName, key string) (*project.ProjectConfig, error) {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.ProjectConfig
-	result := r.db.Where("project_id = ? AND key = ?", projectID, key).First(&model)
+	result := db.Where("project_name = ? AND key = ?", projectName, key).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to find config by project id and key: %w", result.Error)
+		return nil, fmt.Errorf("failed to find config by project name and key: %w", result.Error)
 	}
 
 	return r.modelToDomain(&model), nil
 }
 
 func (r *ProjectConfigRepo) FindAll() ([]*project.ProjectConfig, error) {
+	db, err := r.getDB("")
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.ProjectConfig
-	result := r.db.Find(&models)
+	result := db.Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find all configs: %w", result.Error)
 	}
@@ -80,24 +112,34 @@ func (r *ProjectConfigRepo) FindAll() ([]*project.ProjectConfig, error) {
 }
 
 func (r *ProjectConfigRepo) Update(c *project.ProjectConfig) error {
-	model := &models.ProjectConfig{
-		ID:        c.ID,
-		ProjectID: c.ProjectID,
-		Key:       c.Key,
-		Value:     c.Value,
-		CreatedAt: c.CreatedAt,
-		UpdatedAt: c.UpdatedAt,
+	db, err := r.getDB(c.ProjectName)
+	if err != nil {
+		return err
 	}
 
-	result := r.db.Model(&models.ProjectConfig{}).Where("id = ?", c.ID).Updates(model)
+	model := &models.ProjectConfig{
+		ID:          c.ID,
+		ProjectName: c.ProjectName,
+		Key:         c.Key,
+		Value:       c.Value,
+		CreatedAt:   c.CreatedAt,
+		UpdatedAt:   c.UpdatedAt,
+	}
+
+	result := db.Model(&models.ProjectConfig{}).Where("id = ?", c.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update project config: %w", result.Error)
 	}
 	return nil
 }
 
-func (r *ProjectConfigRepo) Delete(id string) error {
-	result := r.db.Delete(&models.ProjectConfig{}, "id = ?", id)
+func (r *ProjectConfigRepo) Delete(id string, projectName string) error {
+	db, err := r.getDB(projectName)
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.ProjectConfig{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete project config: %w", result.Error)
 	}
@@ -106,12 +148,12 @@ func (r *ProjectConfigRepo) Delete(id string) error {
 
 func (r *ProjectConfigRepo) modelToDomain(m *models.ProjectConfig) *project.ProjectConfig {
 	return &project.ProjectConfig{
-		ID:        m.ID,
-		ProjectID: m.ProjectID,
-		Key:       m.Key,
-		Value:     m.Value,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
+		ID:          m.ID,
+		ProjectName: m.ProjectName,
+		Key:         m.Key,
+		Value:       m.Value,
+		CreatedAt:   m.CreatedAt,
+		UpdatedAt:   m.UpdatedAt,
 	}
 }
 

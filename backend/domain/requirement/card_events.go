@@ -18,7 +18,7 @@ func (ca *CardAggregate) CreateAndPublish(eventBus event.EventBus, mode EventPub
 	evt.Payload["description"] = ca.Card.Description
 	evt.Payload["original"] = ca.Card.Original
 	evt.Payload["priority"] = string(ca.Card.Priority)
-	evt.Payload["project_id"] = ca.Card.ProjectID
+	evt.Payload["project_name"] = ca.Card.ProjectName
 	evt.Payload["pipeline_id"] = ca.Card.PipelineID
 	evt.Payload["structured_output"] = ca.Card.StructuredOutput
 
@@ -33,7 +33,7 @@ func (ca *CardAggregate) ConfirmAndPublish(eventBus event.EventBus, mode EventPu
 	evt := event.NewRequirementEvent(uid.NewID(), ca.Card.ID, event.CardConfirmedEvent)
 	evt.Payload["old_status"] = string(CardDraft)
 	evt.Payload["new_status"] = string(ca.Card.Status)
-	evt.Payload["project_id"] = ca.Card.ProjectID
+	evt.Payload["project_name"] = ca.Card.ProjectName
 	evt.Payload["title"] = ca.Card.Title
 
 	return ca.publishEvent(evt, eventBus, mode)
@@ -47,7 +47,7 @@ func (ca *CardAggregate) SupersedeAndPublish(newCardID string, eventBus event.Ev
 	evt := event.NewRequirementEvent(uid.NewID(), ca.Card.ID, event.CardSupersededEvent)
 	evt.Payload["superseded_by"] = newCardID
 	evt.Payload["old_status"] = string(ca.Card.Status)
-	evt.Payload["project_id"] = ca.Card.ProjectID
+	evt.Payload["project_name"] = ca.Card.ProjectName
 
 	return ca.publishEvent(evt, eventBus, mode)
 }
@@ -59,7 +59,7 @@ func (ca *CardAggregate) AbandonAndPublish(eventBus event.EventBus, mode EventPu
 
 	evt := event.NewRequirementEvent(uid.NewID(), ca.Card.ID, event.CardAbandonedEvent)
 	evt.Payload["old_status"] = string(ca.Card.Status)
-	evt.Payload["project_id"] = ca.Card.ProjectID
+	evt.Payload["project_name"] = ca.Card.ProjectName
 	evt.Payload["had_dependencies"] = ca.HasDependencies()
 
 	return ca.publishEvent(evt, eventBus, mode)

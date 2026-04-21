@@ -26,8 +26,8 @@ func NewRequirementService(
 	}
 }
 
-func (s *RequirementService) CreateCard(id, title, description, original, projectID string, priority requirement.Priority) (*requirement.Card, error) {
-	card := requirement.NewCard(id, title, description, original, projectID)
+func (s *RequirementService) CreateCard(id, title, description, original, projectName string, priority requirement.Priority) (*requirement.Card, error) {
+	card := requirement.NewCard(id, title, description, original, projectName)
 	if priority != "" {
 		if err := card.SetPriority(priority); err != nil {
 			return nil, err
@@ -42,12 +42,17 @@ func (s *RequirementService) CreateCard(id, title, description, original, projec
 }
 
 func (s *RequirementService) GetCard(cardID string) (*requirement.Card, error) {
-	return s.cardRepo.FindByID(cardID)
+	cards, _ := s.cardRepo.FindAll()
+	projectName := ""
+	if len(cards) > 0 {
+		projectName = cards[0].ProjectName
+	}
+	return s.cardRepo.FindByID(cardID, projectName)
 }
 
-func (s *RequirementService) ListCards(projectID string) ([]*requirement.Card, error) {
-	if projectID != "" {
-		return s.cardRepo.FindByProjectID(projectID)
+func (s *RequirementService) ListCards(projectName string) ([]*requirement.Card, error) {
+	if projectName != "" {
+		return s.cardRepo.FindByProjectName(projectName)
 	}
 	return s.cardRepo.FindAll()
 }
@@ -57,7 +62,12 @@ func (s *RequirementService) ListCardsByStatus(status requirement.CardStatus) ([
 }
 
 func (s *RequirementService) UpdateCard(cardID string, title, description *string, priority requirement.Priority, structuredOutput, pipelineID *string) (*requirement.Card, error) {
-	card, err := s.cardRepo.FindByID(cardID)
+	cards, _ := s.cardRepo.FindAll()
+	projectName := ""
+	if len(cards) > 0 {
+		projectName = cards[0].ProjectName
+	}
+	card, err := s.cardRepo.FindByID(cardID, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +100,12 @@ func (s *RequirementService) UpdateCard(cardID string, title, description *strin
 }
 
 func (s *RequirementService) DeleteCard(cardID string) error {
-	card, err := s.cardRepo.FindByID(cardID)
+	cards, _ := s.cardRepo.FindAll()
+	projectName := ""
+	if len(cards) > 0 {
+		projectName = cards[0].ProjectName
+	}
+	card, err := s.cardRepo.FindByID(cardID, projectName)
 	if err != nil {
 		return err
 	}
@@ -98,11 +113,16 @@ func (s *RequirementService) DeleteCard(cardID string) error {
 		return fmt.Errorf("card not found: %s", cardID)
 	}
 	_ = s.depRepo.DeleteByCardID(cardID)
-	return s.cardRepo.Delete(cardID)
+	return s.cardRepo.Delete(cardID, projectName)
 }
 
 func (s *RequirementService) ConfirmCard(cardID string) error {
-	card, err := s.cardRepo.FindByID(cardID)
+	cards, _ := s.cardRepo.FindAll()
+	projectName := ""
+	if len(cards) > 0 {
+		projectName = cards[0].ProjectName
+	}
+	card, err := s.cardRepo.FindByID(cardID, projectName)
 	if err != nil {
 		return err
 	}
@@ -134,7 +154,12 @@ func (s *RequirementService) ConfirmCard(cardID string) error {
 }
 
 func (s *RequirementService) StartCard(cardID string) error {
-	card, err := s.cardRepo.FindByID(cardID)
+	cards, _ := s.cardRepo.FindAll()
+	projectName := ""
+	if len(cards) > 0 {
+		projectName = cards[0].ProjectName
+	}
+	card, err := s.cardRepo.FindByID(cardID, projectName)
 	if err != nil {
 		return err
 	}
@@ -148,7 +173,12 @@ func (s *RequirementService) StartCard(cardID string) error {
 }
 
 func (s *RequirementService) CompleteCard(cardID string) error {
-	card, err := s.cardRepo.FindByID(cardID)
+	cards, _ := s.cardRepo.FindAll()
+	projectName := ""
+	if len(cards) > 0 {
+		projectName = cards[0].ProjectName
+	}
+	card, err := s.cardRepo.FindByID(cardID, projectName)
 	if err != nil {
 		return err
 	}
@@ -162,14 +192,19 @@ func (s *RequirementService) CompleteCard(cardID string) error {
 }
 
 func (s *RequirementService) AddDependency(id, cardID, dependsOnID string, depType requirement.DependencyType) (*requirement.CardDependency, error) {
-	card, err := s.cardRepo.FindByID(cardID)
+	cards, _ := s.cardRepo.FindAll()
+	projectName := ""
+	if len(cards) > 0 {
+		projectName = cards[0].ProjectName
+	}
+	card, err := s.cardRepo.FindByID(cardID, projectName)
 	if err != nil {
 		return nil, err
 	}
 	if card == nil {
 		return nil, fmt.Errorf("card not found: %s", cardID)
 	}
-	target, err := s.cardRepo.FindByID(dependsOnID)
+	target, err := s.cardRepo.FindByID(dependsOnID, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +230,12 @@ func (s *RequirementService) GetDependencies(cardID string) ([]*requirement.Card
 }
 
 func (s *RequirementService) UpdateDependency(id, cardID, dependsOnID string, depType requirement.DependencyType) (*requirement.CardDependency, error) {
-	card, err := s.cardRepo.FindByID(cardID)
+	cards, _ := s.cardRepo.FindAll()
+	projectName := ""
+	if len(cards) > 0 {
+		projectName = cards[0].ProjectName
+	}
+	card, err := s.cardRepo.FindByID(cardID, projectName)
 	if err != nil {
 		return nil, err
 	}

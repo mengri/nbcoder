@@ -10,14 +10,23 @@ import (
 )
 
 type SubscriptionPreferenceRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewSubscriptionPreferenceRepo(db *gorm.DB) notify.SubscriptionPreferenceRepo {
-	return &SubscriptionPreferenceRepo{db: db}
+func NewSubscriptionPreferenceRepo(dbProvider DBProvider) notify.SubscriptionPreferenceRepo {
+	return &SubscriptionPreferenceRepo{dbProvider: dbProvider}
+}
+
+func (r *SubscriptionPreferenceRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *SubscriptionPreferenceRepo) Save(pref *notify.SubscriptionPreference) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.SubscriptionPreference{
 		ID:              pref.ID,
 		Recipient:       pref.Recipient,
@@ -28,7 +37,7 @@ func (r *SubscriptionPreferenceRepo) Save(pref *notify.SubscriptionPreference) e
 		DigestFrequency: "",
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save subscription preference: %w", result.Error)
 	}
@@ -36,8 +45,13 @@ func (r *SubscriptionPreferenceRepo) Save(pref *notify.SubscriptionPreference) e
 }
 
 func (r *SubscriptionPreferenceRepo) FindByRecipient(recipient string) ([]*notify.SubscriptionPreference, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.SubscriptionPreference
-	result := r.db.Where("recipient = ?", recipient).Find(&models)
+	result := db.Where("recipient = ?", recipient).Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find subscription preferences by recipient: %w", result.Error)
 	}
@@ -46,8 +60,13 @@ func (r *SubscriptionPreferenceRepo) FindByRecipient(recipient string) ([]*notif
 }
 
 func (r *SubscriptionPreferenceRepo) FindByEventType(eventType string) ([]*notify.SubscriptionPreference, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.SubscriptionPreference
-	result := r.db.Where("event_type = ?", eventType).Find(&models)
+	result := db.Where("event_type = ?", eventType).Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find subscription preferences by event type: %w", result.Error)
 	}
@@ -56,8 +75,13 @@ func (r *SubscriptionPreferenceRepo) FindByEventType(eventType string) ([]*notif
 }
 
 func (r *SubscriptionPreferenceRepo) FindByRecipientAndEventType(recipient, eventType string) (*notify.SubscriptionPreference, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.SubscriptionPreference
-	result := r.db.Where("recipient = ? AND event_type = ?", recipient, eventType).First(&model)
+	result := db.Where("recipient = ? AND event_type = ?", recipient, eventType).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -69,12 +93,17 @@ func (r *SubscriptionPreferenceRepo) FindByRecipientAndEventType(recipient, even
 }
 
 func (r *SubscriptionPreferenceRepo) Update(pref *notify.SubscriptionPreference) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.SubscriptionPreference{
 		Recipient: pref.Recipient,
 		EventType: pref.EventType,
 	}
 
-	result := r.db.Model(&models.SubscriptionPreference{}).Where("id = ?", pref.ID).Updates(model)
+	result := db.Model(&models.SubscriptionPreference{}).Where("id = ?", pref.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update subscription preference: %w", result.Error)
 	}
@@ -82,7 +111,12 @@ func (r *SubscriptionPreferenceRepo) Update(pref *notify.SubscriptionPreference)
 }
 
 func (r *SubscriptionPreferenceRepo) Delete(id string) error {
-	result := r.db.Delete(&models.SubscriptionPreference{}, "id = ?", id)
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.SubscriptionPreference{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete subscription preference: %w", result.Error)
 	}
@@ -107,14 +141,23 @@ func (r *SubscriptionPreferenceRepo) modelsToDomain(models []models.Subscription
 }
 
 type NotificationTemplateRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewNotificationTemplateRepo(db *gorm.DB) notify.NotificationTemplateRepo {
-	return &NotificationTemplateRepo{db: db}
+func NewNotificationTemplateRepo(dbProvider DBProvider) notify.NotificationTemplateRepo {
+	return &NotificationTemplateRepo{dbProvider: dbProvider}
+}
+
+func (r *NotificationTemplateRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *NotificationTemplateRepo) Save(template *notify.NotificationTemplate) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.NotificationTemplate{
 		ID:        template.ID,
 		Name:      template.Name,
@@ -128,7 +171,7 @@ func (r *NotificationTemplateRepo) Save(template *notify.NotificationTemplate) e
 		UpdatedAt: template.UpdatedAt,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save notification template: %w", result.Error)
 	}
@@ -136,8 +179,13 @@ func (r *NotificationTemplateRepo) Save(template *notify.NotificationTemplate) e
 }
 
 func (r *NotificationTemplateRepo) FindByID(id string) (*notify.NotificationTemplate, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.NotificationTemplate
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -149,8 +197,13 @@ func (r *NotificationTemplateRepo) FindByID(id string) (*notify.NotificationTemp
 }
 
 func (r *NotificationTemplateRepo) FindByEventType(eventType string) ([]*notify.NotificationTemplate, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.NotificationTemplate
-	result := r.db.Where("event_type = ? AND is_active = ?", eventType, true).Find(&models)
+	result := db.Where("event_type = ? AND is_active = ?", eventType, true).Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find notification templates by event type: %w", result.Error)
 	}
@@ -159,6 +212,11 @@ func (r *NotificationTemplateRepo) FindByEventType(eventType string) ([]*notify.
 }
 
 func (r *NotificationTemplateRepo) Update(template *notify.NotificationTemplate) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.NotificationTemplate{
 		Name:      template.Name,
 		EventType: template.EventType,
@@ -166,7 +224,7 @@ func (r *NotificationTemplateRepo) Update(template *notify.NotificationTemplate)
 		Body:      template.BodyTemplate,
 	}
 
-	result := r.db.Model(&models.NotificationTemplate{}).Where("id = ?", template.ID).Updates(model)
+	result := db.Model(&models.NotificationTemplate{}).Where("id = ?", template.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update notification template: %w", result.Error)
 	}
@@ -174,7 +232,12 @@ func (r *NotificationTemplateRepo) Update(template *notify.NotificationTemplate)
 }
 
 func (r *NotificationTemplateRepo) Delete(id string) error {
-	result := r.db.Delete(&models.NotificationTemplate{}, "id = ?", id)
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.NotificationTemplate{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete notification template: %w", result.Error)
 	}
@@ -182,8 +245,13 @@ func (r *NotificationTemplateRepo) Delete(id string) error {
 }
 
 func (r *NotificationTemplateRepo) FindByName(name string) (*notify.NotificationTemplate, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.NotificationTemplate
-	result := r.db.Where("name = ?", name).First(&model)
+	result := db.Where("name = ?", name).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -215,14 +283,23 @@ func (r *NotificationTemplateRepo) modelsToDomain(models []models.NotificationTe
 }
 
 type NotificationHistoryRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewNotificationHistoryRepo(db *gorm.DB) notify.NotificationHistoryRepo {
-	return &NotificationHistoryRepo{db: db}
+func NewNotificationHistoryRepo(dbProvider DBProvider) notify.NotificationHistoryRepo {
+	return &NotificationHistoryRepo{dbProvider: dbProvider}
+}
+
+func (r *NotificationHistoryRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *NotificationHistoryRepo) Save(history *notify.NotificationHistory) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	model := &models.NotificationHistory{
 		ID:             history.ID,
 		NotificationID: history.NotificationID,
@@ -233,7 +310,7 @@ func (r *NotificationHistoryRepo) Save(history *notify.NotificationHistory) erro
 		Error:          history.Error,
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save notification history: %w", result.Error)
 	}
@@ -241,8 +318,13 @@ func (r *NotificationHistoryRepo) Save(history *notify.NotificationHistory) erro
 }
 
 func (r *NotificationHistoryRepo) FindByNotificationID(notificationID string) ([]*notify.NotificationHistory, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.NotificationHistory
-	result := r.db.Where("notification_id = ?", notificationID).Order("created_at DESC").Find(&models)
+	result := db.Where("notification_id = ?", notificationID).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find notification history by notification id: %w", result.Error)
 	}
@@ -251,8 +333,13 @@ func (r *NotificationHistoryRepo) FindByNotificationID(notificationID string) ([
 }
 
 func (r *NotificationHistoryRepo) FindByRecipient(recipient string) ([]*notify.NotificationHistory, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.NotificationHistory
-	result := r.db.Where("recipient = ?", recipient).Order("created_at DESC").Find(&models)
+	result := db.Where("recipient = ?", recipient).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find notification history by recipient: %w", result.Error)
 	}
@@ -261,8 +348,13 @@ func (r *NotificationHistoryRepo) FindByRecipient(recipient string) ([]*notify.N
 }
 
 func (r *NotificationHistoryRepo) FindByTimeRange(start, end time.Time) ([]*notify.NotificationHistory, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.NotificationHistory
-	result := r.db.Where("created_at BETWEEN ? AND ?", start, end).Order("created_at DESC").Find(&models)
+	result := db.Where("created_at BETWEEN ? AND ?", start, end).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find notification history by time range: %w", result.Error)
 	}

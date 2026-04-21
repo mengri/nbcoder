@@ -10,23 +10,38 @@ import (
 )
 
 type StageRecordRepo struct {
-	db *gorm.DB
+	dbProvider DBProvider
 }
 
-func NewStageRecordRepo(db *gorm.DB) pipeline.StageRecordRepo {
-	return &StageRecordRepo{db: db}
+func NewStageRecordRepo(dbProvider DBProvider) pipeline.StageRecordRepo {
+	return &StageRecordRepo{dbProvider: dbProvider}
+}
+
+func (r *StageRecordRepo) getDB() (*gorm.DB, error) {
+	return r.dbProvider.GetGlobalDB(), nil
 }
 
 func (r *StageRecordRepo) FindByTimeRange(start time.Time, end time.Time) ([]*pipeline.StageRecord, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.StageRecord
-	result := r.db.Where("created_at >= ? AND created_at <= ?", start, end).Order("created_at DESC").Find(&models)
+	result := db.Where("created_at >= ? AND created_at <= ?", start, end).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find stage records by time range: %w", result.Error)
 	}
 
 	return r.modelsToDomain(models), nil
 }
+
 func (r *StageRecordRepo) Save(record *pipeline.StageRecord) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	var startedAt *time.Time
 	if !record.StartedAt.IsZero() {
 		startedAt = &record.StartedAt
@@ -53,7 +68,7 @@ func (r *StageRecordRepo) Save(record *pipeline.StageRecord) error {
 		UpdatedAt:   time.Now(),
 	}
 
-	result := r.db.Save(model)
+	result := db.Save(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to save stage record: %w", result.Error)
 	}
@@ -61,8 +76,13 @@ func (r *StageRecordRepo) Save(record *pipeline.StageRecord) error {
 }
 
 func (r *StageRecordRepo) FindByID(id string) (*pipeline.StageRecord, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.StageRecord
-	result := r.db.First(&model, "id = ?", id)
+	result := db.First(&model, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -74,8 +94,13 @@ func (r *StageRecordRepo) FindByID(id string) (*pipeline.StageRecord, error) {
 }
 
 func (r *StageRecordRepo) FindAll() ([]*pipeline.StageRecord, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.StageRecord
-	result := r.db.Find(&models)
+	result := db.Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find all stage records: %w", result.Error)
 	}
@@ -84,6 +109,11 @@ func (r *StageRecordRepo) FindAll() ([]*pipeline.StageRecord, error) {
 }
 
 func (r *StageRecordRepo) Update(record *pipeline.StageRecord) error {
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
 	var startedAt *time.Time
 	if !record.StartedAt.IsZero() {
 		startedAt = &record.StartedAt
@@ -102,7 +132,7 @@ func (r *StageRecordRepo) Update(record *pipeline.StageRecord) error {
 		UpdatedAt:   time.Now(),
 	}
 
-	result := r.db.Model(&models.StageRecord{}).Where("id = ?", record.ID).Updates(model)
+	result := db.Model(&models.StageRecord{}).Where("id = ?", record.ID).Updates(model)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update stage record: %w", result.Error)
 	}
@@ -110,7 +140,12 @@ func (r *StageRecordRepo) Update(record *pipeline.StageRecord) error {
 }
 
 func (r *StageRecordRepo) Delete(id string) error {
-	result := r.db.Delete(&models.StageRecord{}, "id = ?", id)
+	db, err := r.getDB()
+	if err != nil {
+		return err
+	}
+
+	result := db.Delete(&models.StageRecord{}, "id = ?", id)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete stage record: %w", result.Error)
 	}
@@ -122,8 +157,13 @@ func (r *StageRecordRepo) FindByStageID(stageID string) ([]*pipeline.StageRecord
 }
 
 func (r *StageRecordRepo) FindByPipelineID(pipelineID string) ([]*pipeline.StageRecord, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.StageRecord
-	result := r.db.Where("pipeline_id = ?", pipelineID).Order("created_at ASC").Find(&models)
+	result := db.Where("pipeline_id = ?", pipelineID).Order("created_at ASC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find stage records by pipeline id: %w", result.Error)
 	}
@@ -132,8 +172,13 @@ func (r *StageRecordRepo) FindByPipelineID(pipelineID string) ([]*pipeline.Stage
 }
 
 func (r *StageRecordRepo) FindByPipelineIDAndStageName(pipelineID, stageName string) (*pipeline.StageRecord, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var model models.StageRecord
-	result := r.db.Where("pipeline_id = ? AND stage_name = ?", pipelineID, stageName).First(&model)
+	result := db.Where("pipeline_id = ? AND stage_name = ?", pipelineID, stageName).First(&model)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -145,8 +190,13 @@ func (r *StageRecordRepo) FindByPipelineIDAndStageName(pipelineID, stageName str
 }
 
 func (r *StageRecordRepo) FindByStatus(status string) ([]*pipeline.StageRecord, error) {
+	db, err := r.getDB()
+	if err != nil {
+		return nil, err
+	}
+
 	var models []models.StageRecord
-	result := r.db.Where("status = ?", status).Order("created_at DESC").Find(&models)
+	result := db.Where("status = ?", status).Order("created_at DESC").Find(&models)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to find stage records by status: %w", result.Error)
 	}

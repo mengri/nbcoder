@@ -10,7 +10,6 @@ import (
 	"github.com/mengri/nbcoder/domain/pipeline"
 	"github.com/mengri/nbcoder/domain/project"
 	"github.com/mengri/nbcoder/domain/requirement"
-	"gorm.io/gorm"
 )
 
 type Repositories struct {
@@ -46,36 +45,36 @@ type Repositories struct {
 	NotificationHistory  notify.NotificationHistoryRepo
 }
 
-func NewRepositories(db *gorm.DB) *Repositories {
+func NewRepositories(dbProvider DBProvider, projectBaseDir string) *Repositories {
 	return &Repositories{
-		Project:               NewProjectRepo(db),
-		ProjectConfig:         NewProjectConfigRepo(db),
-		Standards:             NewStandardsRepo(db),
-		DevStandard:           NewDevStandardRepo(db),
-		BranchPolicyConfig:    NewBranchPolicyConfigRepo(db),
-		ProjectLifecycle:      NewProjectLifecycleRepo(db),
-		ConfigChangeLog:       NewConfigChangeLogRepo(db),
-		Card:                  NewCardRepo(db),
-		CardDependency:        NewCardDependencyRepo(db),
-		Pipeline:              NewPipelineRepo(db),
-		StageRecord:           NewStageRecordRepo(db),
-		Task:                  NewTaskRepo(db),
-		AgentExecution:        NewAgentExecutionRepo(db),
-		Skill:                 NewSkillRepo(db),
-		Provider:              NewProviderRepo(db),
-		Model:                 NewModelRepo(db),
-		ModelChain:            NewModelChainRepo(db),
-		CallLog:               NewCallLogRepo(db),
-		Document:              NewDocumentRepo(db),
-		DocumentChunk:         NewDocumentChunkRepo(db),
-		DocumentIndex:         NewDocumentIndexRepo(db),
-		Directory:             NewDirectoryRepo(db),
-		CloneInstance:         NewCloneInstanceRepo(db),
-		PullRequest:           NewPullRequestRepo(db),
-		Notification:          NewNotificationRepo(db),
-		Subscription:          NewSubscriptionRepo(db),
-		SubscriptionPreference: NewSubscriptionPreferenceRepo(db),
-		NotificationTemplate:  NewNotificationTemplateRepo(db),
-		NotificationHistory:   NewNotificationHistoryRepo(db),
+		Project:               NewProjectRepo(dbProvider, projectBaseDir),
+		ProjectConfig:         NewProjectConfigRepo(dbProvider),
+		Standards:             NewStandardsRepo(dbProvider),
+		DevStandard:           NewDevStandardRepo(dbProvider),
+		BranchPolicyConfig:    NewBranchPolicyConfigRepo(dbProvider),
+		ProjectLifecycle:      NewProjectLifecycleRepo(dbProvider),
+		ConfigChangeLog:       NewConfigChangeLogRepo(dbProvider),
+		Card:                  NewCardRepo(dbProvider),
+		CardDependency:        NewCardDependencyRepo(dbProvider),
+		Pipeline:              NewPipelineRepo(dbProvider),
+		StageRecord:           NewStageRecordRepo(dbProvider),
+		Task:                  NewTaskRepo(dbProvider),
+		AgentExecution:        NewAgentExecutionRepo(dbProvider),
+		Skill:                 NewSkillRepo(dbProvider),
+		Provider:              NewProviderRepo(dbProvider),
+		Model:                 NewModelRepo(dbProvider),
+		ModelChain:            NewModelChainRepo(dbProvider),
+		CallLog:               NewCallLogRepo(dbProvider),
+		Document:              NewDocumentRepo(dbProvider),
+		DocumentChunk:         NewDocumentChunkRepo(dbProvider),
+		DocumentIndex:         NewDocumentIndexRepo(dbProvider),
+		Directory:             NewDirectoryRepo(dbProvider),
+		CloneInstance:         NewCloneInstanceRepo(dbProvider),
+		PullRequest:           NewPullRequestRepo(dbProvider),
+		Notification:          NewNotificationRepo(dbProvider),
+		Subscription:          NewSubscriptionRepo(dbProvider),
+		SubscriptionPreference: NewSubscriptionPreferenceRepo(dbProvider),
+		NotificationTemplate:  NewNotificationTemplateRepo(dbProvider),
+		NotificationHistory:   NewNotificationHistoryRepo(dbProvider),
 	}
 }

@@ -20,7 +20,7 @@ func NewInMemoryProjectRepo() *InMemoryProjectRepo {
 func (r *InMemoryProjectRepo) Save(p *project.Project) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.projects[p.ID] = p
+	r.projects[p.Name] = p
 	return nil
 }
 
@@ -46,14 +46,14 @@ func (r *InMemoryProjectRepo) FindAll() ([]*project.Project, error) {
 
 func (r *InMemoryProjectRepo) Update(p *project.Project) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.projects[p.ID] = p
+	defer r.mu.RUnlock()
+	r.projects[p.Name] = p
 	return nil
 }
 
 func (r *InMemoryProjectRepo) Delete(id string) error {
 	r.mu.Lock()
-	defer r.mu.Unlock()
+	defer r.mu.RUnlock()
 	delete(r.projects, id)
 	return nil
 }
