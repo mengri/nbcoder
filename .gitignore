@@ -3,3 +3,33 @@
 /backend/web/dist/
 /backend/backend/
 /backend/server
+
+# 编译输出
+/bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 数据库文件
+*.db
+.NBCoder-global/
+
+# 前端构建输出
+/web/public/
+/web/dist/
+web/node_modules/
+
+# 测试文件
+web/test-store.js
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.tmp
+*.log
